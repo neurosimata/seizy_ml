@@ -1,0 +1,14 @@
+{
+"parent_path": "", 
+"file_check": false, 
+"data_dir": "h5_data", 
+"processed_dir": "processed", 
+"model_predictions_dir": "model_predictions", 
+"verified_predictions_dir": "verified_predictions", 
+"true_dir": "ground_truth", 
+"filtered": false, 
+"predicted": false, 
+"chanels": ["vhpc", "fc"], 
+"win": 5, 
+"fs": 100
+}
