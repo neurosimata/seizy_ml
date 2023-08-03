@@ -27,49 +27,6 @@ def get_data(load_path, load_y=True):
     
     return data
 
-
-def get_data_with_labels(main_path, exp_path, ch_num=None, inner_path=[], load_y=True):
-    """
-    Retrieve h5 data with their associated ground truth labels(optional).
-    
-    --- Examples---
-    get_data(main_path, exp_path, ch_num = [0,1] , inner_path=[], load_y = True)
-    get_data(main_path, exp_path, ch_num = [0,1] , inner_path={'data_path':'filt_data'}, load_y = False)
-
-    Parameters
-    ----------
-    main_path : Str
-    exp_path : Str
-    ch_num : List, channels to be loaded, optional, The default is [0,1].
-    inner_path : Define inner folder for x or/and y data loading, optional The default is empty list.
-    load_y : Bool, If False only data are returned, optional, The default is True.
-
-    Returns
-    -------
-    data : ndarray (1d = segments, 2d = time, 3d = channels)
-    y_data : 1D Int ndarray
-
-    """
-    
-    if len(inner_path) == 0:
-        inner_path = {'data_path':'downsampled_data', 'pred_path':'verified_predictions_pantelis'}
-    
-    # load lfp/eeg data
-    f = tables.open_file(os.path.join(main_path, inner_path['data_path'], exp_path+'.h5'), mode = 'r') # open tables object
-    data = f.root.data[:]; f.close() # load data
-    
-    if ch_num is not None:
-        data = data[:,:,ch_num] # get only desired channels
-    
-    y_data = []
-    if load_y == True: # get ground truth labels
-        y_data = np.loadtxt(os.path.join(main_path, inner_path['pred_path'], exp_path+'.csv'), delimiter=',', skiprows=0)
-        y_data = y_data.astype(np.bool) # convert to bool
-        return data, y_data
-    
-    return data
-
-
 def save_data(main_path, exp_path, data):
     """
     save_data(main_path, exp_path, data)
