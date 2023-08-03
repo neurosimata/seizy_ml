@@ -15,7 +15,7 @@ from helper.io_getfeatures import get_data, get_features_allch
 
 # define model and features
 model_name = 'gnb_model'
-feature_select = np.array([1,1,1,1,0,0,0,0,0,0,1,1,1,0,0,0,0,0,1,0,0])
+feature_idx = np.array([1,1,1,1,0,0,0,0,0,0,1,1,1,0,0,0,0,0,1,0,0])
 param_list = (features.autocorr, features.line_length, features.rms, 
               features.mad, features.var, features.std, features.psd, 
               features.energy, features.get_envelope_max_diff,)
@@ -53,8 +53,9 @@ class ModelPredict:
         self.merge = 5 # in window bins
 
         # load model
-        self.feature_select = feature_select
+        self.feature_select = np.where(feature_idx)[0]
         self.model = load(model_name +'.joblib')
+        print('Model loaded:', self.model)
 
 
     def predict(self):
@@ -76,7 +77,7 @@ class ModelPredict:
         for i in tqdm(range(len(filelist)), desc = 'Progress'):
             
             # Get predictions (1D-array)
-            data, bounds_pred = self.get_feature_pred(filelist[i].replace('.h5',''))
+            data, bounds_pred = self.get_feature_pred(filelist[i])
             
             # Convert prediction to binary vector and save as .csv
             ModelPredict.save_idx(os.path.join(self.save_path, filelist[i].replace('.h5','.csv')), data, bounds_pred)
@@ -101,7 +102,7 @@ class ModelPredict:
         """
         
         # get data and true labels
-        data = get_data(self.gen_path, file_id, inner_path={'data_path':self.filt_dir}, load_y=False)
+        data = get_data(os.path.join(self.load_path, file_id))
         
         # Eextract features and normalize
         x_data, labels = get_features_allch(data, param_list, cross_ch_param_list)
