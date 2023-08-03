@@ -250,11 +250,3 @@ class VerifyGui(object):
         
         # highlight user selected region
         self.plot_data(user_start=indmin, user_stop=indmax)
-        
-
-        
-        # ## ------ Mouse Button Press ------ ##   
-            
-        # def submit(self, text): # to move to a certain seizure number
-        #     self.ind = eval(text)
-        #     self.plot_data() # plot
