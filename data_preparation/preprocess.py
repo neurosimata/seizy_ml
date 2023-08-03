@@ -18,6 +18,22 @@ class PreProcess:
     
     def __init__(self, load_path, save_path, fs,
                  outier_threshold=25, freq_cutoff=[2]):
+        """
+        
+
+        Parameters
+        ----------
+        load_path : str
+        save_path : str
+        fs : int
+        outier_threshold : int/float
+        freq_cutoff : list, containing a numeral for hpfilter cutoff.
+
+        Returns
+        -------
+        None.
+
+        """
 
         self.load_path = load_path
         self.save_path = save_path
@@ -38,7 +54,7 @@ class PreProcess:
         # get file list 
         filelist = list(filter(lambda k: '.h5' in k, os.listdir(self.load_path)))
         
-        print('\n --->', len(filelist), 'files will be filtered.\n')
+        print('\n --->', len(filelist), 'files will be processed.\n')
         for i in tqdm(range(0, len(filelist)), desc = 'Progress:'): # loop through experiments 
         
             # clean and filter data
@@ -48,8 +64,8 @@ class PreProcess:
             # save clean data
             save_data(self.save_path, filelist[i], data)
             
-        print('Files in', self.main_path, 'directory have been cleaned and saved in:',
-              '-', self.filt_dir, '-')
+        print('Files in', self.load_path, 'directory have been cleaned and saved in:',
+              '-', self.save_path, '-')
         print('---------------------------------------------------------------------------\n')
             
     
