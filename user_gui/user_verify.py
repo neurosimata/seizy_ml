@@ -8,34 +8,39 @@ import numpy as np
 # User Defined
 from helper.array_helper import find_szr_idx
 ### ------------------------------------------- ###
-       
+
+
 class UserVerify:
     """
         Class for user verification of detected seizures.
     """
     
     # class constructor (data retrieval)
-    def __init__(self, settings):
-        """
-
-        Parameters
-        ----------
-        settings : dict
+    def __init__(self, parent_path, processed_dir, model_predictions,
+                 verified_predictions_dir):
         """
         
-        # pass settings to object attributes
-        for key, value in settings.items():
-            setattr(self, key, value)
-            
-        # set full paths       
-        self.org_dir = os.path.join(self.main_path, self.org_dir)
-        self.rawpred_dir = os.path.join(self.main_path, self.rawpred_dir)
-        self.verpred_dir = os.path.join(self.main_path, self.verpred_dir)
+        Parameters
+        ----------
+        parent_path : str
+        processed_dir : str
+        model_predictions : str
+        verified_predictions_dir : str
+
+        Returns
+        -------
+        None.
+
+        """
+
+        # set full paths 
+        self.processed_path = os.path.join(parent_path, processed_dir)
+        self.raw_predictions_path = os.path.join(parent_path, model_predictions)
+        self.verified_predictions_path = os.path.join(parent_path, verified_predictions_dir)
 
         # make path if it doesn't exist
-        if os.path.exists(self.verpred_dir) is False:
-            os.mkdir(self.verpred_dir)
-            
+        if os.path.exists(self.verified_predictions_path) is False:
+            os.mkdir(self.verified_predictions_path)
 
     def select_file(self):
         """
@@ -47,10 +52,10 @@ class UserVerify:
         """
        
         # get all files in raw predictions folder 
-        rawpredlist = list(filter(lambda k: '.csv' in k, os.listdir(self.rawpred_dir)))
+        rawpredlist = list(filter(lambda k: '.csv' in k, os.listdir(self.raw_predictions_path)))
        
         # get all files in user verified predictions
-        verpredlist = list(filter(lambda k: '.csv' in k, os.listdir(self.verpred_dir)))
+        verpredlist = list(filter(lambda k: '.csv' in k, os.listdir(self.verified_predictions_path)))
        
         # get unique list
         not_analyzed_filelist = list(set(rawpredlist) - set(verpredlist))
@@ -84,18 +89,18 @@ class UserVerify:
         print('-> File being analyzed: ', file_id)
 
         # Get predictions
-        pred_path = os.path.join(self.rawpred_dir, file_id)
+        pred_path = os.path.join(self.raw_predictions_path, file_id)
         bin_pred = np.loadtxt(pred_path, delimiter=',', skiprows=0)
         idx_bounds = find_szr_idx(bin_pred, dur=1)
         
         # load raw data for visualization
-        data_path = os.path.join(self.org_dir, file_id.replace('.csv','.h5'))
+        data_path = os.path.join(self.processed_path, file_id.replace('.csv','.h5'))
         f = tables.open_file(data_path, mode='r')
         data = f.root.data[:]
         f.close()
         
         # check whether to continue
-        print('>>>>',idx_bounds.shape[0] ,'seizures detected')
+        print('>>>>', idx_bounds.shape[0], 'seizures detected')
         
         return data, idx_bounds
 
@@ -113,7 +118,7 @@ class UserVerify:
          ver_pred = np.zeros(data_len)
          
          # save file
-         np.savetxt(os.path.join(self.verpred_dir, file_id), ver_pred, delimiter=',',fmt='%i')
+         np.savetxt(os.path.join(self.verified_predictions_path, file_id), ver_pred, delimiter=',',fmt='%i')
          print('Verified predictions for ', file_id, ' were saved\n')
     
     
