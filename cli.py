@@ -177,7 +177,7 @@ def verify(ctx):
 def extractproperties(ctx):
     """6: Get seizure properties"""
     
-    ver_path = os.path.join(ctx.obj['parent_path'], ctx.obj['verpred_dir'])
+    ver_path = os.path.join(ctx.obj['parent_path'], ctx.obj['verified_predictions_dir'])
     if  os.path.exists(ver_path):
         filelist = list(filter(lambda k: '.csv' in k, os.listdir(ver_path)))
 
@@ -188,7 +188,7 @@ def extractproperties(ctx):
     
     # get properies and save
     from helper.get_seizure_properties import get_seizure_prop
-    _,save_path = get_seizure_prop(ctx.obj)
+    _, save_path = get_seizure_prop(ctx.obj['parent_path'], ctx.obj['verified_predictions_dir'], ctx.obj['win'])
     click.secho(f"\n -> Properies were saved in '{save_path}'.\n", fg='green', bold=True)
 
 
