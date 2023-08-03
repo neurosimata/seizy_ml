@@ -39,10 +39,10 @@ class VerifyGui(object):
         self.idx_out = np.copy(idx_bounds)                                      # output index
         self.facearray = ['w']*idx_bounds.shape[0]                              # color list
         self.bounds = 60                                                        # surrounding region in seconds
-        self.win = settings['win']                                              # window (column size) 
-        self.fs = settings['new_fs']                                            # sampling rate
-        self.ch_list = np.array(settings['ch_struct'])[settings['ch_list']]     # channel names
-        self.verpred_dir = os.path.join(settings['main_path'], settings['verpred_dir'])
+        self.win = settings['win']                                              # window (column size)
+        self.fs = settings['fs']                                                # sampling rate
+        self.ch_list = np.array(settings['channels'])                           # channel names
+        self.verpred_dir = os.path.join(settings['parent_path'], settings['verified_predictions_dir'])
         self.wait_time = 0.1 # in seconds
         
         # create figure and axis
