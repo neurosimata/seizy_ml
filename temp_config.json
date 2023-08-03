@@ -6,7 +6,7 @@
 "model_predictions_dir": "model_predictions", 
 "verified_predictions_dir": "verified_predictions", 
 "true_dir": "ground_truth", 
-"filtered": false, 
+"processed": false, 
 "predicted": false, 
 "chanels": ["vhpc", "fc"], 
 "win": 5, 
