@@ -8,13 +8,16 @@ import pandas as pd
 from helper.array_helper import find_szr_idx
 ### ----------------------------------------------------------------------- ###
 
-def get_seizure_prop(settings):
+def get_seizure_prop(parent_path, verified_predictions_dir, win):
     """
     Get seizure properties and save to csv file.
 
     Parameters
     ----------
-    settings : dict, containing config
+    parent_path
+    verified_predictions_dir
+    win
+    
 
     Returns
     -------
@@ -23,8 +26,7 @@ def get_seizure_prop(settings):
     """
 
     # get properties 
-    ver_path = os.path.join(settings['main_path'], settings['verpred_dir'])
-    win = settings['win']
+    ver_path = os.path.join(parent_path, verified_predictions_dir)
     
     # get csv file list
     filelist = list(filter(lambda k: '.csv' in k, os.listdir(ver_path)))
@@ -63,7 +65,7 @@ def get_seizure_prop(settings):
     df['Seizures per hr'] = df['seizure number'] / df['Recording dur(hrs)'] 
     
     # save file
-    save_path = os.path.join(settings['main_path'], 'seizure_properties.csv')
+    save_path = os.path.join(parent_path, 'seizure_properties.csv')
     df.to_csv(save_path, index=False)
 
     return df, save_path
