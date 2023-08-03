@@ -16,13 +16,14 @@ class PreProcess:
     Remove outliers and filer data from parent folder.
     """
     
-    def __init__(self, load_path, save_path, fs):
+    def __init__(self, load_path, save_path, fs,
+                 outier_threshold=25, freq_cutoff=[2]):
 
         self.load_path = load_path
         self.save_path = save_path
         self.fs = fs
-        self.outier_threshold = 25
-        self.freq_cutoff = [2]
+        self.outier_threshold = outier_threshold
+        self.freq_cutoff = freq_cutoff
 
     def filter_data(self):
         """
