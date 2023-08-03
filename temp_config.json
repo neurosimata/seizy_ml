@@ -8,7 +8,7 @@
 "true_dir": "ground_truth", 
 "processed": false, 
 "predicted": false, 
-"chanels": ["vhpc", "fc"], 
+"channels": ["vhpc", "fc"], 
 "win": 5, 
 "fs": 100
 }
