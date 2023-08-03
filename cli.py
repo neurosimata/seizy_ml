@@ -35,8 +35,6 @@ def check_main(folder, data_dir, csv_dir):
     if len(h5) != len(h5 & ver):
         return folder
 
-
-
 @click.group()
 @click.pass_context
 def main(ctx):
@@ -62,7 +60,6 @@ def main(ctx):
     with open(settings_path, 'r') as file:
         settings = json.loads(file.read())
         ctx.obj = settings.copy()
-
     
 @main.command()
 @click.pass_context
@@ -87,7 +84,7 @@ def filecheck(ctx):
                     fg='yellow', bold=True)
         return
     
-    # code to check for files
+    ### code to check for files ###
 
     # save error check to settings file
     ctx.obj.update({'file_check': True})
@@ -106,7 +103,6 @@ def preprocess(ctx):
                     fg='yellow', bold=True)
         return
     
-    
     from data_preparation.preprocess import PreProcess
     # get paths, preprocess and save data
     load_path = os.path.join(ctx.obj['parent_path'], ctx.obj['data_dir'])
@@ -114,8 +110,7 @@ def preprocess(ctx):
     process_obj = PreProcess(load_path=load_path, save_path=save_path, fs=ctx.obj['fs'])
     process_obj.filter_data()
     ctx.obj.update({'processed':True})
-        
-        
+
     with open(settings_path, 'w') as file:
         file.write(json.dumps(ctx.obj)) 
     return
@@ -130,7 +125,6 @@ def predict(ctx):
                     fg='yellow', bold=True)
         return
     
-        
     from data_preparation.get_predictions import ModelPredict
     # get paths and model predictions
     load_path = os.path.join(ctx.obj['parent_path'], ctx.obj['processed_dir'])
@@ -153,19 +147,20 @@ def verify(ctx):
                     fg='yellow', bold=True)
         return
 
-    out = check_main(folder=ctx.obj['main_path'],
-                     data_dir=ctx.obj['filt_dir'],
-                     csv_dir=ctx.obj['rawpred_dir'])
+    out = check_main(folder=ctx.obj['parent_path'],
+                     data_dir=ctx.obj['processed_dir'],
+                     csv_dir=ctx.obj['model_predictions_dir'])
     if out:
-        click.secho(f"\n -> Main path was not set properly. Could not find: {out}.\n",
+        click.secho(f"\n -> Error. Could not find: {out}.\n",
              fg='yellow', bold=True)
         return
     
-    # import toolbox for verification
-    from user_gui.user_verify import UserVerify
-    
     # Create instance for UserVerify class
-    obj = UserVerify(ctx.obj)
+    from user_gui.user_verify import UserVerify
+    obj = UserVerify(ctx.obj['parent_path'],
+                     ctx.obj['processed_dir'], 
+                     ctx.obj['model_predictions_dir'],
+                     ctx.obj['verified_predictions_dir'])
     file_id = obj.select_file()                     # user file selection
     data, idx_bounds = obj.get_bounds(file_id)      # get data and seizure index
     
