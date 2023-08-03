@@ -86,14 +86,8 @@ def filecheck(ctx):
                     " Please run -setpath-.\n",
                     fg='yellow', bold=True)
         return
-        
-
-    # for f_path in folders:
-    #     ctx.obj['main_path'] = f_path  
-    #     obj = Lab2h5(ctx.obj)
-    #     success = obj.check_files()
-    #     success_list.append(success)
     
+    # code to check for files
 
     # save error check to settings file
     ctx.obj.update({'file_check': True})
@@ -112,39 +106,38 @@ def preprocess(ctx):
                     fg='yellow', bold=True)
         return
     
+    
     from data_preparation.preprocess import PreProcess
-         
+    # get paths, preprocess and save data
     load_path = os.path.join(ctx.obj['parent_path'], ctx.obj['data_dir'])
     save_path = os.path.join(ctx.obj['parent_path'], ctx.obj['processed_dir'])
-    filt_obj = PreProcess(load_path=load_path, save_path=save_path, fs=ctx.obj['fs'])
-    filt_obj.filter_data()
-    ctx.obj.update({'filtered':True})
+    process_obj = PreProcess(load_path=load_path, save_path=save_path, fs=ctx.obj['fs'])
+    process_obj.filter_data()
+    ctx.obj.update({'processed':True})
         
         
     with open(settings_path, 'w') as file:
         file.write(json.dumps(ctx.obj)) 
     return
-
+ 
 @main.command()
 @click.pass_context
 def predict(ctx):
     """4: Generate model predictions"""
-    from data_preparation.get_predictions import ModelPredict
     
-    if not ctx.obj['file_check']:
-        click.secho("\n -> File check has not pass. Please run -filecheck-.\n",
+    if ctx.obj['processed'] == False:
+        click.secho("\n -> Data need to be preprocessed first. Please run -preprocess-.\n",
                     fg='yellow', bold=True)
         return
     
-    if not ctx.obj['file_check']:
-        click.secho("\n -> Data need to be filtered first. Please run -filter_data-.\n",
-                    fg='yellow', bold=True)
-        return
         
-
-    # ctx.obj['main_path'] = f_path
-    # ModelPredict(ctx.obj).predict()
-    # ctx.obj.update({'predicted':1})
+    from data_preparation.get_predictions import ModelPredict
+    # get paths and model predictions
+    load_path = os.path.join(ctx.obj['parent_path'], ctx.obj['processed_dir'])
+    save_path = os.path.join(ctx.obj['parent_path'], ctx.obj['model_predictions_dir'])
+    model_obj = ModelPredict(load_path, save_path, win=ctx.obj['win'], fs=ctx.obj['fs'])
+    model_obj.predict()
+    ctx.obj.update({'predicted':1})
     
     with open(settings_path, 'w') as file:
         file.write(json.dumps(ctx.obj)) 
@@ -153,7 +146,12 @@ def predict(ctx):
 @main.command()
 @click.pass_context
 def verify(ctx):
-    """Verify detected seizures"""
+    """5: Verify detected seizures"""
+    
+    if ctx.obj['predicted'] == False:
+        click.secho("\n -> Model predictions have not been generated. Please run -predict-.\n",
+                    fg='yellow', bold=True)
+        return
 
     out = check_main(folder=ctx.obj['main_path'],
                      data_dir=ctx.obj['filt_dir'],
@@ -181,10 +179,10 @@ def verify(ctx):
         
 @main.command()
 @click.pass_context
-def getprop(ctx):
-    """Get seizure properties"""
+def extractproperties(ctx):
+    """6: Get seizure properties"""
     
-    ver_path = os.path.join(ctx.obj['main_path'], ctx.obj['verpred_dir'])
+    ver_path = os.path.join(ctx.obj['parent_path'], ctx.obj['verpred_dir'])
     if  os.path.exists(ver_path):
         filelist = list(filter(lambda k: '.csv' in k, os.listdir(ver_path)))
 
