@@ -35,7 +35,23 @@ def check_main(folder, data_dir, csv_dir):
     if len(h5) != len(h5 & ver):
         return folder
 
-@click.group()
+class CustomOrderGroup(click.Group):
+    def __init__(self, **attrs):
+        super(CustomOrderGroup, self).__init__(**attrs)
+        self.commands_in_order = []
+
+    def command(self, *args, **kwargs):
+        def decorator(f):
+            cmd = super(CustomOrderGroup, self).command(*args, **kwargs)(f)
+            self.commands_in_order.append(cmd.name)
+            return cmd
+        return decorator
+
+    def list_commands(self, ctx):
+        return self.commands_in_order
+
+    
+@click.group(cls=CustomOrderGroup)
 @click.pass_context
 def main(ctx):
     """
@@ -62,15 +78,15 @@ def main(ctx):
         ctx.obj = settings.copy()
     
 @main.command()
+@click.argument('path')
 @click.pass_context
-def setpath(ctx):
+def setpath(ctx, path):
     """1: Set path"""
     
-    path = input('Enter Parent path: \n')
     ctx.obj.update({'parent_path': path})
     with open(settings_path, 'w') as file:
         file.write(json.dumps(ctx.obj))  
-    click.secho(f"\n -> Path was set to:'{path}'.\n", fg='green', bold=True)    
+    click.secho(f"\n -> Path was set to:'{path}'.\n", fg='green', bold=True)
         
 @main.command()
 @click.pass_context
