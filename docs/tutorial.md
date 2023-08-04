@@ -1,23 +1,23 @@
 ## Tutorial
 
-1) **Launch Conda Shell Prompt**
+1) **Launch Conda Shell Prompt, navigate to seizy_ml directory and activate the virtual environment.**
 ```
 cd ./seizy_ml
+conda activate seizyml
 ```
-- Navigate to seizy_ml directory
 
-2) **Set parent path for data processing.**
+2) **Set path for data processing.**
 ```
 python cli.py setpath 'path'
 ```
-- This is the parent path where the directory ('data_dir') with h5 data resides.
+- This is the parent path where the directory ('data_dir') with h5 data resides[configuration settings](configuration.md).
 - All subsequent folders and model predictions will reside here.
 
 3) **Run file check.**
 ```
 python cli.py filecheck
 ```
-- This step checks that the h5 files have the correct shape.
+- This step checks that the h5 files have the correct dimensions. For help on how to convert files to h5 check the [h5_conversion script](examples/to_h5.py)
 - Each h5 file should contain **Two** LFP/EEG channels [configuration settings](configuration.md).
 
 4) **Preprocess data.**
@@ -36,7 +36,7 @@ python cli.py predict
 
 6) **Verify seizures and adjust seizure boundaries.**
 - This will launch a prompt to allow for file selection for verification.
-- After the file selection, a GUI will be launched for seizure verfication and seizure oundary adjustment. 
+- After the file selection, a GUI will be launched for seizure verfication and seizure boundary adjustment. 
 ```
 python cli.py verify
 ```
