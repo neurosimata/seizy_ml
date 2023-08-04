@@ -7,34 +7,6 @@ import json
 ### ----------------------------------------------------------------- ###
 
 
-def check_main(folder, data_dir, csv_dir):
-    """
-    Check if folders exist and if h5 files match csv files.
-
-    Parameters
-    ----------
-    folder : dict, with config settings
-    data_dir : str, data directory name
-    true_dir : str, csv directory name
-
-    Returns
-    -------
-    None,str, None if test passes, otherwise a string is returned with the name
-    of the folder where the test did not pass
-
-    """
-    
-    h5_path = os.path.join(folder, data_dir)
-    ver_path = os.path.join(folder, csv_dir)
-    if not os.path.exists(h5_path):
-        return h5_path
-    if not os.path.exists(ver_path):
-        return ver_path
-    h5 = {x.replace('.h5', '') for x in os.listdir(h5_path)}
-    ver = {x.replace('.csv', '') for x in os.listdir(ver_path)}   
-    if len(h5) != len(h5 & ver):
-        return folder
-
 class CustomOrderGroup(click.Group):
     def __init__(self, **attrs):
         super(CustomOrderGroup, self).__init__(**attrs)
@@ -55,7 +27,7 @@ class CustomOrderGroup(click.Group):
 @click.pass_context
 def main(ctx):
     """
-    -----------------------------------------------------
+    -------------------------------------------------------------
     
     \b                                                             
     \b                       _          ___  ___ _     
@@ -68,7 +40,7 @@ def main(ctx):
     \b                            |___/                                                  
     \b 
 
-    ----------------------------------------------------- 
+    --------------------------------------------------------------
                                                                                                                                            
     """
         
@@ -78,12 +50,32 @@ def main(ctx):
         ctx.obj = settings.copy()
     
 @main.command()
-@click.argument('path')
+@click.argument('path',  type=click.Path())
 @click.pass_context
 def setpath(ctx, path):
-    """1: Set path"""
+    """
+    1: Set path
+    **Arguments:path**
+    """
     
+    # get parent path and set checks to False
     ctx.obj.update({'parent_path': path})
+    ctx.obj.update({'file_check':False})
+    ctx.obj.update({'processed':False})
+    ctx.obj.update({'predicted':False})
+    
+    # run check for processed and model predictions
+    from data_preparation.file_check import check_main
+    processed_check, model_predictions_check = check_main(ctx.obj['parent_path'], 
+                                                          ctx.obj['data_dir'], 
+                                                          ctx.obj['processed_dir'], 
+                                                          ctx.obj['model_predictions_dir'])
+    if processed_check:
+            ctx.obj.update({'file_check':True})
+            ctx.obj.update({'processed':True})
+    if processed_check and model_predictions_check:
+        ctx.obj.update({'predicted':True})
+        
     with open(settings_path, 'w') as file:
         file.write(json.dumps(ctx.obj))  
     click.secho(f"\n -> Path was set to:'{path}'.\n", fg='green', bold=True)
@@ -101,13 +93,20 @@ def filecheck(ctx):
         return
     
     ### code to check for files ###
-
-    # save error check to settings file
-    ctx.obj.update({'file_check': True})
-    with open(settings_path, 'w') as file:
-        file.write(json.dumps(ctx.obj)) 
-    click.secho(f"\n -> Error check for '{ctx.obj['parent_path']}' has been completed.\n",
-                fg='green', bold=True)
+    from data_preparation.file_check import check_h5_files
+    error = check_h5_files(os.path.join(ctx.obj['parent_path'], ctx.obj['data_dir']),
+                           win=ctx.obj['win'], fs=ctx.obj['fs'])
+    
+    if error:
+        click.secho(f"-> File check did not pass {error}\n", fg='yellow', bold=True)
+        
+    else:
+        # save error check to settings file
+        ctx.obj.update({'file_check': True})
+        with open(settings_path, 'w') as file:
+            file.write(json.dumps(ctx.obj)) 
+        click.secho(f"\n -> Error check for '{ctx.obj['parent_path']}' has been completed.\n",
+                    fg='green', bold=True)
 
 @main.command()
 @click.pass_context
@@ -147,7 +146,7 @@ def predict(ctx):
     save_path = os.path.join(ctx.obj['parent_path'], ctx.obj['model_predictions_dir'])
     model_obj = ModelPredict(load_path, save_path, win=ctx.obj['win'], fs=ctx.obj['fs'])
     model_obj.predict()
-    ctx.obj.update({'predicted':1})
+    ctx.obj.update({'predicted':True})
     
     with open(settings_path, 'w') as file:
         file.write(json.dumps(ctx.obj)) 
@@ -162,8 +161,9 @@ def verify(ctx):
         click.secho("\n -> Model predictions have not been generated. Please run -predict-.\n",
                     fg='yellow', bold=True)
         return
-
-    out = check_main(folder=ctx.obj['parent_path'],
+    
+    from data_preparation.file_check import check_verified
+    out = check_verified(folder=ctx.obj['parent_path'],
                      data_dir=ctx.obj['processed_dir'],
                      csv_dir=ctx.obj['model_predictions_dir'])
     if out:
