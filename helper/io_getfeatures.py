@@ -45,7 +45,7 @@ def save_data(main_path, exp_path, data):
     try:
         # Saving Parameters
         atom = tables.Float64Atom() # declare data type 
-        fsave = tables.open_file(os.path.join(main_path, exp_path+'.h5') , mode = 'w') # open tables object
+        fsave = tables.open_file(os.path.join(main_path, exp_path) , mode='w') # open tables object
         ds = fsave.create_earray(fsave.root, 'data', atom, # create data store 
                                     [0, data.shape[1], data.shape[2]])
         ds.append(data) # append data
