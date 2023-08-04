@@ -55,7 +55,7 @@ class PreProcess:
         filelist = list(filter(lambda k: '.h5' in k, os.listdir(self.load_path)))
         
         print('\n --->', len(filelist), 'files will be processed.\n')
-        for i in tqdm(range(0, len(filelist)), desc = 'Progress:'): # loop through experiments 
+        for i in tqdm(range(0, len(filelist)), desc='Progress:'): # loop through experiments 
         
             # clean and filter data
             data = get_data(os.path.join(self.load_path, filelist[i]))
