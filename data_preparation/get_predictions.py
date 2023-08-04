@@ -4,10 +4,8 @@
 import os
 from tqdm import tqdm
 import numpy as np
-import pandas as pd
 from sklearn.preprocessing import StandardScaler
 from joblib import load
-# User Defined
 from helper.array_helper import find_szr_idx, merge_close
 from helper import features
 from helper.io_getfeatures import get_data, get_features_allch
@@ -56,7 +54,7 @@ class ModelPredict:
         self.feature_select = np.where(feature_idx)[0]
         self.model = load(model_name +'.joblib')
         print('Model loaded:', self.model)
-
+        
 
     def predict(self):
         """
