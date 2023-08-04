@@ -41,7 +41,7 @@ python cli.py predict
 python cli.py verify
 ```
 
-<img src="verify_gui.PNG" width="500">
+<img src="verify_gui.png" width="500">
 
 7) **Get seizure properties.** 
 -This step will generate a csv file with seizure properties for each h5 file.
