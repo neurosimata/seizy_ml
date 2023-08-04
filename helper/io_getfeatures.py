@@ -133,7 +133,7 @@ def get_features_allch(data, param_list, cross_ch_param_list):
     """
     
     labels = [] # make list to store labels
-    x_data = np.zeros((data.shape[0],0),dtype=np.float) # make array to store all features
+    x_data = np.zeros((data.shape[0],0), dtype=float) # make array to store all features
     
     # calculate single channel measures
     for ii in range(data.shape[2]):
