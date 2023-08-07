@@ -59,8 +59,8 @@ def generate_noisy_sine_waves(num_samples, num_channels, sampling_rate, frequenc
     return time, noisy_sine_waves
 
 
-# Here are creating a datastore in append mode, so that we can load large files in chuncks, 
-# downsample them and then store them. When we finish looping through the file we close the datstore.
+# Here we are creating a datastore in append mode, so that we can load large files in chuncks, 
+# downsample them and then store them in h5 file format. When we finish looping through the file we close the datstore.
 # After that we can access our h5 file. 
 
 # =====================
@@ -80,7 +80,7 @@ downsample_factor = int(fs/new_fs)  # compute the downsample factor
 
 # We define how many channels our data will have, and which channels we're interested in
 total_channels = 5  # total number of channels in the generated data
-select_channels = [1, 4]  # list of channels to be selected for decimation
+select_channels = [1, 4]  # list of channels to be selected for decimation (**select 2 channels only**)
 
 # ==========================
 # 3. Datastore Shape Settings
@@ -105,14 +105,14 @@ ds = fsave.create_earray(fsave.root, 'data', tables.Float64Atom(),
 # 5. Generate and Load Data
 # ==========================
 
-# Here we generate and load data. In a real use case, this would be replaced by actual data loading
+# Here we generate and load data. In a real use case, this would be replaced by actual data loading in a loop
 _, data_chunk = generate_noisy_sine_waves(chunksize*fs, total_channels, fs, frequency=10, noise_level=.5)
 
 # ==========================
 # 6. Decimate the Data
 # ==========================
 
-# We decimate the data from the selected channels
+# We decimate the data from the selected channels (only 2)
 decimate_data = []
 for i in select_channels:
     data_ch = signal.decimate(data_chunk[:, i], downsample_factor)
