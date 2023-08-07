@@ -137,7 +137,7 @@ def find_szr_idx(pred_array, dur=0):
     return idx_bounds
 
 
-def merge_close(bounds, merge_margin = 5):
+def merge_close(bounds, merge_margin=5):
     """
     merge_close(bounds, merge_margin = 5)
 
