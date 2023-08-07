@@ -10,14 +10,14 @@ conda activate seizyml
 ```
 python cli.py setpath 'path'
 ```
-- This is the parent path where the directory ('data_dir') with h5 data resides[configuration settings](configuration.md).
+- This is the parent path where the directory ('data_dir') with h5 data resides [configuration settings](configuration.md).
 - All subsequent folders and model predictions will reside here.
 
 3) **Run file check.**
 ```
 python cli.py filecheck
 ```
-- This step checks that the h5 files have the correct dimensions. For help on how to convert files to h5 check the [h5_conversion script](examples/to_h5.py)
+- This step checks that the h5 files have the correct dimensions. For help on how to convert files to h5 have a look at the [h5_conversion script](examples/to_h5.py).
 - Each h5 file should contain **Two** LFP/EEG channels [configuration settings](configuration.md).
 
 4) **Preprocess data.**
