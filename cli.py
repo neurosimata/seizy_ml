@@ -83,7 +83,7 @@ def setpath(ctx, path):
 @main.command()
 @click.pass_context
 def filecheck(ctx):
-    """2: Check whether files can be opened and read"""
+    """2: Check files"""
     
     # get child folders and create success list for each folder
     if not os.path.exists(ctx.obj['parent_path']):
