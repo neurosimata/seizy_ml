@@ -18,9 +18,7 @@ After the seizures are detected, they can be manually verified with a user-frien
 ### Launch CLI
 <img src="docs/cli.png" width="500">
 
-1) By clicking on app.cmd executable
-
-2) Via Anaconda's shell prompt
+Via Anaconda's shell prompt
 
         # navigate to *seizy* folder
         cd ./seizy_ml
