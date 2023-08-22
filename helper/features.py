@@ -3,29 +3,9 @@
 ### -------------- IMPORTS -------------- ###
 import numpy as np
 from numba import jit
-from scipy.signal import welch, hilbert
 from scipy.fftpack import fft
 ### ------------------------------------- ###
 
-@jit(nopython = True)
-def find_nearest(array, value):
-    """
-    find_nearest(array, value)
-    find the index of the nearest value in array
-
-    Parameters
-    ----------
-    array : ndarray
-    value : Real Number
-
-    Returns
-    -------
-    idx : Int, index of nearest value
-
-    """
-    array = np.asarray(array)
-    idx = (np.abs(array - value)).argmin()
-    return idx
 
 @jit(nopython=True)
 def moving_average(a, n) :
@@ -51,7 +31,7 @@ def line_length(signal):
     line_lengths = line_lengths.astype(np.double)
     
     for i in range(1, signal.shape[0]): # loop though signal
-        line_lengths += np.abs(signal[i] - signal[i-1]) #signal[i, :] - signal[i-1,:]
+        line_lengths += np.abs(signal[i] - signal[i-1])
 
     # remove zero-length channels
     line_lengths = line_lengths[np.nonzero(line_lengths)] 
@@ -200,25 +180,22 @@ def autocorr(signal):
     """
     return np.correlate(signal,signal)
 
-def psd(signal, fs = 100, freq = [2,40]):
-    
+def psd(signal, fs=100):
     """
-    psd(signal, fs, freq)
     Measure the power of the signal over the signal
-    over a frequency range as defined by freq
+    over 2-40 Hz
     
     Parameters
     ----------
     signal : 1D numpy array
     fs: Int, sampling rate
-    freq: list, low and upper frequency bounds
     
     Returns
     -------
     power_area : np.float
     
     """ 
-    
+    freq=[2 ,40]
     # Frequency Boundaries
     f_res = signal.shape[0]/fs
     flow  = int(freq[0]*f_res)
@@ -237,34 +214,6 @@ def psd(signal, fs = 100, freq = [2,40]):
     psdx = 2*xdft[0:int(xdft.shape[0]/2+1)] 
 
     return np.sum(psdx[flow:fup])
-
-def psd_welch(signal, fs = 100, freq = [5,25]):
-    
-    """
-    psd_welch(signal, fs = 100, freq = [5,25])
-    Measure the power of the signal over the signal
-    over a frequency range as defined by freq
-    
-    Parameters
-    ----------
-    signal : 1D numpy array
-    fs: Int, sampling rate
-    freq: list, low and upper frequency bounds
-    
-    Returns
-    -------
-    power_area : np.float
-    
-    """ 
-    
-    # calculate pwelch
-    f,p = welch(signal, fs=fs, window='hann')
-    
-    # get frequency boundaries
-    flow = find_nearest(f, freq[0])
-    fup = find_nearest(f, freq[1])
-
-    return np.sum(p[flow:fup])
 
 
 @jit(nopython = True)
@@ -320,20 +269,7 @@ def signal_abs_covar(signal1, signal2):
         abs_covar[i] = np.abs(signal1[i]-x1) * np.abs(signal2[i]-x2)
         
     return np.sum(abs_covar)/signal1.shape[0]
-        
 
-def signal_covar_hilbert(signal1, signal2):
-    """
-    signal_covar_hilbert(signal1,signal2)
-    Measures the covariance between hilbert amp of two signals with same size
-
-    Parameters
-    ----------
-    signal1 : 1D numpy array
-    signal2 : 1D numpy array
-    -------
-    """
-    return np.cov(np.abs(hilbert(signal1)), np.abs(hilbert(signal2)))[0][1]
 
 
 
