@@ -1,14 +1,30 @@
-parent_path: ""
-file_check: false
-processed_check: false
-predicted_check: false
-data_dir: h5_data
-processed_dir: processed
-model_predictions_dir: model_predictions
-verified_predictions_dir: verified_predictions
-true_dir: ground_truth
 channels:
-  - vhpc
-  - fc
-win: 5
+- eeg1
+- eeg2
+- eeg3
+data_dir: h5_data
+file_check: false
 fs: 100
+single_channel_features:
+    - autocorr
+    - line_length
+    - rms
+    - mad
+    - var
+    - std
+    - power
+    - energy
+    - get_envelope_max_diff
+cross_channel_features:
+    - cross_corr
+    - signal_covar
+    - signal_abs_covar
+model_predictions_dir: model_predictions
+parent_path: ""
+predicted_check: false
+processed_check: false
+train_dir: trained
+processed_dir: processed
+true_dir: ground_truth
+verified_predictions_dir: verified_predictions
+win: 5
