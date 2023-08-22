@@ -3,7 +3,7 @@
 ### ----------------------------- IMPORTS --------------------------- ###
 import click
 import os
-import json
+import yaml
 ### ----------------------------------------------------------------- ###
 
 
@@ -46,7 +46,7 @@ def main(ctx):
         
     # get settings and pass to context
     with open(settings_path, 'r') as file:
-        settings = json.loads(file.read())
+        settings = yaml.safe_load(file)
         ctx.obj = settings.copy()
     
 @main.command()
@@ -61,8 +61,8 @@ def setpath(ctx, path):
     # get parent path and set checks to False
     ctx.obj.update({'parent_path': path})
     ctx.obj.update({'file_check':False})
-    ctx.obj.update({'processed':False})
-    ctx.obj.update({'predicted':False})
+    ctx.obj.update({'processed_check':False})
+    ctx.obj.update({'predicted_check':False})
     
     # run check for processed and model predictions
     from data_preparation.file_check import check_main
@@ -72,12 +72,12 @@ def setpath(ctx, path):
                                                           ctx.obj['model_predictions_dir'])
     if processed_check:
             ctx.obj.update({'file_check':True})
-            ctx.obj.update({'processed':True})
+            ctx.obj.update({'processed_check':True})
     if processed_check and model_predictions_check:
-        ctx.obj.update({'predicted':True})
+        ctx.obj.update({'predicted_check':True})
         
     with open(settings_path, 'w') as file:
-        file.write(json.dumps(ctx.obj))  
+        yaml.dump(ctx.obj, file) 
     click.secho(f"\n -> Path was set to:'{path}'.\n", fg='green', bold=True)
         
 @main.command()
@@ -104,7 +104,7 @@ def filecheck(ctx):
         # save error check to settings file
         ctx.obj.update({'file_check': True})
         with open(settings_path, 'w') as file:
-            file.write(json.dumps(ctx.obj)) 
+            yaml.dump(ctx.obj, file) 
         click.secho(f"\n -> Error check for '{ctx.obj['parent_path']}' has been completed.\n",
                     fg='green', bold=True)
 
@@ -124,10 +124,10 @@ def preprocess(ctx):
     save_path = os.path.join(ctx.obj['parent_path'], ctx.obj['processed_dir'])
     process_obj = PreProcess(load_path=load_path, save_path=save_path, fs=ctx.obj['fs'])
     process_obj.filter_data()
-    ctx.obj.update({'processed':True})
+    ctx.obj.update({'processed_check':True})
 
     with open(settings_path, 'w') as file:
-        file.write(json.dumps(ctx.obj)) 
+        yaml.dump(ctx.obj, file) 
     return
  
 @main.command()
@@ -135,7 +135,7 @@ def preprocess(ctx):
 def predict(ctx):
     """4: Generate model predictions"""
     
-    if ctx.obj['processed'] == False:
+    if ctx.obj['processed_check'] == False:
         click.secho("\n -> Data need to be preprocessed first. Please run -preprocess-.\n",
                     fg='yellow', bold=True)
         return
@@ -146,10 +146,10 @@ def predict(ctx):
     save_path = os.path.join(ctx.obj['parent_path'], ctx.obj['model_predictions_dir'])
     model_obj = ModelPredict(load_path, save_path, win=ctx.obj['win'], fs=ctx.obj['fs'])
     model_obj.predict()
-    ctx.obj.update({'predicted':True})
+    ctx.obj.update({'predicted_check':True})
     
     with open(settings_path, 'w') as file:
-        file.write(json.dumps(ctx.obj)) 
+        yaml.dump(ctx.obj, file)
     return
 
 @main.command()
@@ -157,7 +157,7 @@ def predict(ctx):
 def verify(ctx):
     """5: Verify detected seizures"""
     
-    if ctx.obj['predicted'] == False:
+    if ctx.obj['predicted_check'] == False:
         click.secho("\n -> Model predictions have not been generated. Please run -predict-.\n",
                     fg='yellow', bold=True)
         return
@@ -211,8 +211,8 @@ def extractproperties(ctx):
 if __name__ == '__main__':
     
     # define settings path
-    temp_settings_path = 'temp_config.json'
-    settings_path = 'config.json'
+    temp_settings_path = 'temp_config.yaml'
+    settings_path = 'config.yaml'
     
     # check if settings file exist and if all the fields are present
     if not os.path.isfile(settings_path):
@@ -222,9 +222,9 @@ if __name__ == '__main__':
     else:
         # check if keys match otherwise load original settings
         with open(temp_settings_path, 'r') as file:
-            temp_settings = json.loads(file.read())      
+            temp_settings = yaml.safe_load(file)      
         with open(settings_path, 'r') as file:
-            settings = json.loads(file.read())
+            settings = yaml.safe_load(file) 
     
         if settings.keys() != temp_settings.keys():
             import shutil
