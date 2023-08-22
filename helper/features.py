@@ -8,13 +8,6 @@ from scipy.fftpack import fft
 
 
 @jit(nopython=True)
-def moving_average(a, n) :
-    ret = np.cumsum(a)
-    ret = ret.astype(np.float64)
-    ret[n:] = ret[n:] - ret[:-n]
-    return ret[n - 1:] / n
-
-@jit(nopython=True)
 def line_length(signal):
     """
     line_length(signal)
@@ -40,7 +33,6 @@ def line_length(signal):
     # take the median and normalize by clip length
     line_length = np.median(line_lengths) / signal.shape[0]
     return line_length
-
 
 @jit(nopython = True)
 def std(signal):
@@ -77,26 +69,6 @@ def rms(signal):
     signal : 1D numpy array
     """
     return np.sqrt(np.mean(np.square(signal)))
-
-@jit(nopython = True)
-def rms_envelope(signal, win = 5):
-    """
-    rms_envelope(signal, win = 5)
-    Returns root mean square envelope of a signal
-    based on window win
-
-    Parameters
-    ----------
-    signal : 1D numpy array
-    win : moving window
-    Output
-    -------
-    rms_envelope : 1D numpy array
-    """
-    env = np.zeros(signal.shape[0])
-    for i in range(0, signal.shape[0]):
-        env[i] = rms(signal[i:i+win])
-    return env
 
 @jit(nopython = True)
 def max_envelope(signal, win = 5):
@@ -139,7 +111,6 @@ def get_envelope_max_diff(signal,win = 30):
     
     return np.sum(up_env-low_env)
     
-
 @jit(nopython = True)
 def mad(signal):
     """
@@ -155,7 +126,6 @@ def mad(signal):
 @jit(nopython = True)
 def energy(signal):
     """
-    energy(signal)
     Measures the energy of a signal
 
     Parameters
@@ -169,7 +139,6 @@ def energy(signal):
 @jit(nopython = True)
 def autocorr(signal):
     """
-    autocorr(signal)
     Measures the autocorrelation of a signal
 
     Parameters
@@ -180,7 +149,7 @@ def autocorr(signal):
     """
     return np.correlate(signal,signal)
 
-def psd(signal, fs=100):
+def power(signal, fs=100):
     """
     Measure the power of the signal over the signal
     over 2-40 Hz
@@ -219,7 +188,6 @@ def psd(signal, fs=100):
 @jit(nopython = True)
 def cross_corr(signal1, signal2):
     """
-    cross_corr(signal1,signal2)
     Measures the cross correlation of two signals with same size
 
     Parameters
@@ -235,7 +203,6 @@ def cross_corr(signal1, signal2):
 @jit(nopython = True)
 def signal_covar(signal1, signal2):
     """
-    signal_covar(signal1, signal2)
     Measures the covariance between two signals with same size
 
     Parameters
@@ -250,7 +217,6 @@ def signal_covar(signal1, signal2):
 @jit(nopython = True)
 def signal_abs_covar(signal1, signal2):
     """
-    signal_abs_covar(signal1, signal2)
     Measures the absolute covariance between two signals with same size
 
     Parameters
