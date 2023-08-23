@@ -71,16 +71,14 @@ def rms(signal):
     return np.sqrt(np.mean(np.square(signal)))
 
 @jit(nopython = True)
-def max_envelope(signal, win = 5):
+def max_envelope(signal, win):
     """
-    max_envelope(signal, win = 5)
     Returns max envelope of a signal
     based on window win
 
     Parameters
     ----------
     signal : 1D numpy array
-    win : moving window
     Output
     -------
     max_envelope : 1D numpy array
@@ -91,9 +89,8 @@ def max_envelope(signal, win = 5):
     return env
 
 @jit(nopython = True)
-def get_envelope_max_diff(signal,win = 30):
+def get_envelope_max_diff(signal, win=30):
     """
-    get_envelope_max_diff(signal, win = 5)
     Measures the sum of the differences between
     the upper and lower envelopes
 
@@ -106,7 +103,6 @@ def get_envelope_max_diff(signal,win = 30):
     max_envelope : 1D numpy array
     """
     up_env = max_envelope(signal,win=win)
-    
     low_env = -max_envelope(-signal,win=win)
     
     return np.sum(up_env-low_env)
@@ -114,7 +110,6 @@ def get_envelope_max_diff(signal,win = 30):
 @jit(nopython = True)
 def mad(signal):
     """
-    mad(signal)
     Measures mean absolute deviation of a signal
 
     Parameters
@@ -126,7 +121,7 @@ def mad(signal):
 @jit(nopython = True)
 def energy(signal):
     """
-    Measures the energy of a signal
+    Measures the mean energy of a signal
 
     Parameters
     ----------
@@ -134,7 +129,7 @@ def energy(signal):
     -------
     energy : np.float
     """
-    return np.sum(np.square(signal)) #change with np.mean to calculate mean energy
+    return np.mean(np.square(signal)) #change with np.square to calculate energy
 
 @jit(nopython = True)
 def autocorr(signal):
