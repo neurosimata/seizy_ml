@@ -119,7 +119,7 @@ def mad(signal):
     return np.mean(np.abs(signal - np.mean(signal)))
 
 @jit(nopython = True)
-def energy(signal):
+def mean_energy(signal):
     """
     Measures the mean energy of a signal
 
@@ -129,7 +129,7 @@ def energy(signal):
     -------
     energy : np.float
     """
-    return np.mean(np.square(signal)) #change with np.square to calculate energy
+    return np.mean(np.square(signal))
 
 @jit(nopython = True)
 def autocorr(signal):

@@ -13,7 +13,7 @@ single_channel_features:
     - var
     - std
     - power
-    - energy
+    - mean_energy
     - get_envelope_max_diff
 cross_channel_features:
     - cross_corr
