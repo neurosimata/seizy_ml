@@ -100,23 +100,24 @@ def train(ctx, p):
     if 'preprocess' in process_type:
         from helper.io import load_data, save_data
         from helper.preprocess import PreProcess
-        # load data and preprocess
         data = load_data(os.path.join(train_path, 'x_pre.h5'))
         obj = PreProcess("", "", fs=ctx.obj['fs'],)
-        x = obj.filter_clean(data)
-        save_data(os.path.join(train_path, 'x.h5'), x)
+        data = obj.filter_clean(data)
+        save_data(os.path.join(train_path, 'x.h5'), data)
 
     if 'get_features' in process_type:
         from helper.get_features import compute_features
+        data = load_data(os.path.join(train_path, 'x.h5'))
         features_array, feature_labels = compute_features(data, ctx.obj['single_channel_features'], ctx.obj['cross_channel_features'],
                          ctx.obj['channels'])
+        save_data(os.path.join(train_path, 'features.h5'), features_array)
         
     if 'parameter_space' in process_type:
         from get_train_parameters import feature_selection_and_ranking, feature_space
-        # get feature metrics
-        y_true = load_data(os.path.join(train_path, 'x_pre.h5'))
-        feature_metrics = feature_selection_and_ranking(x, y_true, feature_labels)
-        feature_space, ranks = feature_space(feature_metrics, feature_size=[4,8],
+        features = load_data(os.path.join(train_path, 'features.h5'))
+        y_true = load_data(os.path.join(train_path, 'y.h5'))
+        feature_metrics = feature_selection_and_ranking(features, y_true, feature_labels)
+        feature_space = feature_space(feature_metrics, feature_size=[4,8],
                           export_name='feature_space.csv', export=True)
         
     if 'train' in process_type:
