@@ -81,7 +81,7 @@ def setpath(ctx, path):
 @main.command()
 @click.pass_context
 def train(ctx, p):
-    """* Train Model """
+    """* Train Models """
     
     # check if user input exists in process types
     process_type_options = ['preprocess', 'get_features', 'parameter_space', 'train']
@@ -95,33 +95,51 @@ def train(ctx, p):
         click.secho(f"\n -> Got'{p}' instead of {process_type_options}\n",
                     fg='yellow', bold=True)
         return
-        
+    
     train_path = os.path.join(ctx.obj['parent_path'], ctx.obj['train_dir'])
+    
+    # pre-process data (filter, remove extreme outliers)
     if 'preprocess' in process_type:
         from helper.io import load_data, save_data
         from helper.preprocess import PreProcess
-        data = load_data(os.path.join(train_path, 'x_pre.h5'))
+        data = load_data(os.path.join(train_path, 'data.h5'))
         obj = PreProcess("", "", fs=ctx.obj['fs'],)
         data = obj.filter_clean(data)
-        save_data(os.path.join(train_path, 'x.h5'), data)
-
+        save_data(os.path.join(train_path, 'data_clean.h5'), data)
+    
+    # extract features
     if 'get_features' in process_type:
         from helper.get_features import compute_features
-        data = load_data(os.path.join(train_path, 'x.h5'))
-        features_array, feature_labels = compute_features(data, ctx.obj['single_channel_features'], ctx.obj['cross_channel_features'],
+        if not data:
+            data = load_data(os.path.join(train_path, 'data_clean.h5'))
+        features, feature_labels = compute_features(data, ctx.obj['single_channel_features'], ctx.obj['cross_channel_features'],
                          ctx.obj['channels'])
-        save_data(os.path.join(train_path, 'features.h5'), features_array)
-        
+        save_data(os.path.join(train_path, 'features.h5'), features)
+    
+    # create csv with best features
     if 'parameter_space' in process_type:
-        from get_train_parameters import feature_selection_and_ranking, feature_space
-        features = load_data(os.path.join(train_path, 'features.h5'))
-        y_true = load_data(os.path.join(train_path, 'y.h5'))
-        feature_metrics = feature_selection_and_ranking(features, y_true, feature_labels)
-        feature_space = feature_space(feature_metrics, feature_size=[4,8],
-                          export_name='feature_space.csv', export=True)
-        
+        from train.select_features import feature_selection_and_ranking, get_feature_space
+        if not features:
+            features = load_data(os.path.join(train_path, 'features.h5'))
+        y = load_data(os.path.join(train_path, 'y.h5'))
+        feature_ranks = feature_selection_and_ranking(features, y, feature_labels)
+        feature_ranks.to_csv(os.path.join(train_path,'feature_ranks.csv', index=False))
+        feature_space = get_feature_space(feature_ranks, feature_size=[33,66])
+        feature_space.to_csv(os.path.join(train_path,'feature_space.csv'), index=False)
+    
+    # train models
     if 'train' in process_type:
-        print('train')
+        import pandas as pd
+        from train.train_models import train_and_save_models
+        if not feature_space:
+            features = load_data(os.path.join(train_path, 'features.h5'))
+            y = load_data(os.path.join(train_path, 'y.h5'))
+            feature_space = pd.read_csv(os.path.join(train_path,'feature_space.csv'))
+         
+        trained_model_path = os.path.join(train_path, 'models')
+        train_df = train_and_save_models(trained_model_path, features, y, feature_space, train_process='serial')
+        train_df.to_csv(os.path.join(train_path, 'trained_models.csv'), index=False)
+
 
         
 @main.command()
