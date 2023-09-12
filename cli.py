@@ -137,7 +137,7 @@ def train(ctx, p):
             feature_space = pd.read_csv(os.path.join(train_path,'feature_space.csv'))
          
         trained_model_path = os.path.join(train_path, 'models')
-        train_df = train_and_save_models(trained_model_path, features, y, feature_space, train_process='serial')
+        train_df = train_and_save_models(trained_model_path, features, y, feature_space)
         train_df.to_csv(os.path.join(train_path, 'trained_models.csv'), index=False)
 
 
