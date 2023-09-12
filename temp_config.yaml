@@ -19,6 +19,7 @@ cross_channel_features:
     - cross_corr
     - signal_covar
     - signal_abs_covar
+model_id: ""
 model_predictions_dir: model_predictions
 parent_path: ""
 predicted_check: false

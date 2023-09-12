@@ -139,8 +139,12 @@ def train(ctx, p):
         trained_model_path = os.path.join(train_path, 'models')
         train_df = train_and_save_models(trained_model_path, features, y, feature_space)
         train_df.to_csv(os.path.join(train_path, 'trained_models.csv'), index=False)
-
-
+        
+    # find model with best f1 score and save to settings
+    model_id = train_df.loc[train_df['F1'].idxmax(), 'id']
+    ctx.obj.update({'model_id': model_id})
+    with open(settings_path, 'w') as file:
+        yaml.dump(ctx.obj, file)
         
 @main.command()
 @click.pass_context
