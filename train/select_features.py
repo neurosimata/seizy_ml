@@ -109,8 +109,8 @@ def get_feature_space(feature_ranks, feature_size=[33,66],
     bool_array[0,:] = dft[rank_cols[0]]<=max_rank
     cntr = 1
     for rank_col in rank_cols:
-        for feature_percent in feature_size:
-            feature_len = int(feature_percent*len(feature_ranks.columns))
+        for feature_percent in feature_size:   
+            feature_len = int(feature_percent/100*len(feature_ranks.columns))
             idx = dft.nsmallest(feature_len, columns=rank_col).index.values
             bool_array[cntr, idx] = 1
             cntr+=1
