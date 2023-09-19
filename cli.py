@@ -77,74 +77,6 @@ def setpath(ctx, path):
     with open(settings_path, 'w') as file:
         yaml.dump(ctx.obj, file) 
     click.secho(f"\n -> Path was set to:'{path}'.\n", fg='green', bold=True)
-
-@main.command()
-@click.pass_context
-def train(ctx, p):
-    """* Train Models """
-    
-    # check if user input exists in process types
-    process_type_options = ['preprocess', 'get_features', 'parameter_space', 'train']
-    if p is None:
-        process_type = set(process_type_options)
-    else:
-        process_type = set([p])
-    
-    process_type = list(process_type.intersection(process_type_options))
-    if not process_type:
-        click.secho(f"\n -> Got'{p}' instead of {process_type_options}\n",
-                    fg='yellow', bold=True)
-        return
-    
-    train_path = os.path.join(ctx.obj['parent_path'], ctx.obj['train_dir'])
-    
-    # pre-process data (filter, remove extreme outliers)
-    if 'preprocess' in process_type:
-        from helper.io import load_data, save_data
-        from helper.preprocess import PreProcess
-        data = load_data(os.path.join(train_path, 'data.h5'))
-        obj = PreProcess("", "", fs=ctx.obj['fs'],)
-        data = obj.filter_clean(data)
-        save_data(os.path.join(train_path, 'data_clean.h5'), data)
-    
-    # extract features
-    if 'get_features' in process_type:
-        from helper.get_features import compute_features
-        if not data:
-            data = load_data(os.path.join(train_path, 'data_clean.h5'))
-        features, feature_labels = compute_features(data, ctx.obj['single_channel_features'], ctx.obj['cross_channel_features'],
-                         ctx.obj['channels'])
-        save_data(os.path.join(train_path, 'features.h5'), features)
-    
-    # create csv with best features
-    if 'parameter_space' in process_type:
-        from train.select_features import feature_selection_and_ranking, get_feature_space
-        if not features:
-            features = load_data(os.path.join(train_path, 'features.h5'))
-        y = load_data(os.path.join(train_path, 'y.h5'))
-        feature_ranks = feature_selection_and_ranking(features, y, feature_labels)
-        feature_ranks.to_csv(os.path.join(train_path,'feature_ranks.csv', index=False))
-        feature_space = get_feature_space(feature_ranks, feature_size=[33,66])
-        feature_space.to_csv(os.path.join(train_path,'feature_space.csv'), index=False)
-    
-    # train models
-    if 'train' in process_type:
-        import pandas as pd
-        from train.train_models import train_and_save_models
-        if not feature_space:
-            features = load_data(os.path.join(train_path, 'features.h5'))
-            y = load_data(os.path.join(train_path, 'y.h5'))
-            feature_space = pd.read_csv(os.path.join(train_path,'feature_space.csv'))
-         
-        trained_model_path = os.path.join(train_path, 'models')
-        train_df = train_and_save_models(trained_model_path, features, y, feature_space)
-        train_df.to_csv(os.path.join(train_path, 'trained_models.csv'), index=False)
-        
-    # find model with best f1 score and save to settings
-    model_id = train_df.loc[train_df['F1'].idxmax(), 'id']
-    ctx.obj.update({'model_id': model_id})
-    with open(settings_path, 'w') as file:
-        yaml.dump(ctx.obj, file)
         
 @main.command()
 @click.pass_context
@@ -161,7 +93,8 @@ def filecheck(ctx):
     ### code to check for files ###
     from data_preparation.file_check import check_h5_files
     error = check_h5_files(os.path.join(ctx.obj['parent_path'], ctx.obj['data_dir']),
-                           win=ctx.obj['win'], fs=ctx.obj['fs'])
+                           win=ctx.obj['win'], fs=ctx.obj['fs'], 
+                           channels=len(ctx.obj['channels']))
     
     if error:
         click.secho(f"-> File check did not pass {error}\n", fg='yellow', bold=True)
@@ -272,7 +205,101 @@ def extractproperties(ctx):
     from helper.get_seizure_properties import get_seizure_prop
     _, save_path = get_seizure_prop(ctx.obj['parent_path'], ctx.obj['verified_predictions_dir'], ctx.obj['win'])
     click.secho(f"\n -> Properies were saved in '{save_path}'.\n", fg='green', bold=True)
+
+
+@main.command()
+@click.option('--p', type=str, help='preprocess, get_features, parameter_space, train')
+@click.pass_context
+def train(ctx, p):
+    """* Train Models """
     
+    # imports
+    import numpy as np
+    import pandas as pd
+    from train.train_models import train_and_save_models
+    from helper.io import load_data, save_data
+    from data_preparation.preprocess import PreProcess
+    from helper.get_features import compute_features
+    from train.select_features import feature_selection_and_ranking, get_feature_space
+    
+    # check if user input exists in process types
+    process_type_options = ['preprocess', 'get_features', 'parameter_space', 'train']
+    if p is None:
+        process_type = set(process_type_options)
+    else:
+        process_type = set([p])
+    
+    process_type = list(process_type.intersection(process_type_options))
+    if not process_type:
+        click.secho(f"\n -> Got'{p}' instead of {process_type_options}\n",
+                    fg='yellow', bold=True)
+        return
+    
+    train_path = os.path.join(ctx.obj['parent_path'], ctx.obj['train_dir'])
+    
+    # pre-process data (filter, remove extreme outliers)
+    if 'preprocess' in process_type:
+        data = load_data(os.path.join(train_path, 'data.h5'))
+        
+        # check if data are structured properly
+        if data.shape[2] != len(ctx.obj['channels']):
+            print('Error! Length of channels:', len(ctx.obj['channels']),
+                  'in settings file,', ' does not match train data channels.',
+                  data.shape[2], '.')
+            return
+        if data.shape[1] != int(ctx.obj['fs']*ctx.obj['win']):
+            print('Error! fs*win -ie window size-' , int(ctx.obj['fs']*ctx.obj['win']),
+                  'in settings file',
+                  'does not match train data dimensions.',
+                  data.shape[1], '.')
+            return
+        
+        print('-> Processing Data:')
+        obj = PreProcess("", "", fs=ctx.obj['fs'],)
+        data = obj.filter_clean(data)
+        save_data(os.path.join(train_path, 'data_clean.h5'), data)
+    
+    # extract features
+    if 'get_features' in process_type:
+        if 'data' not in locals():
+            data = load_data(os.path.join(train_path, 'data_clean.h5'))
+        print('-> Extracting Features:')
+        features, feature_labels = compute_features(data, ctx.obj['single_channel_features'], ctx.obj['cross_channel_features'],
+                         ctx.obj['channels'])
+        np.savetxt(os.path.join(train_path, 'feature_labels.csv'), feature_labels, fmt="%s")
+        save_data(os.path.join(train_path, 'features.h5'), features)
+    
+    # create csv with best features
+    if 'parameter_space' in process_type:
+        if 'features' not in locals():
+            feature_labels = np.loadtxt(os.path.join(train_path, 'feature_labels.csv'), dtype=str)
+            features = load_data(os.path.join(train_path, 'features.h5'))
+        y = load_data(os.path.join(train_path, 'y.h5'))
+        print('-> Selecting Features:')
+        feature_ranks = feature_selection_and_ranking(features, y, feature_labels)
+        feature_ranks.to_csv(os.path.join(train_path,'feature_ranks.csv'), index=False)
+        feature_space = get_feature_space(feature_ranks, feature_size=[33,66])
+        feature_space.to_csv(os.path.join(train_path,'feature_space.csv'), index=False)
+    
+    # train models
+    if 'train' in process_type:
+        if 'feature_space' not in locals():
+            features = load_data(os.path.join(train_path, 'features.h5'))
+            y = load_data(os.path.join(train_path, 'y.h5'))
+            feature_space = pd.read_csv(os.path.join(train_path,'feature_space.csv'))
+         
+        trained_model_path = os.path.join(train_path, 'models')
+        print('-> Training:')
+        train_df = train_and_save_models(trained_model_path, features, y, feature_space)
+        train_df.to_csv(os.path.join(train_path, 'trained_models.csv'), index=False)
+        
+        # find model with best f1 score and save to settings
+        model_id = train_df.loc[train_df['F1'].idxmax(), 'ID']
+        ctx.obj.update({'model_id': model_id})
+        print('Best model based on F1 score was selected:', model_id)
+        
+    with open(settings_path, 'w') as file:
+        yaml.dump(ctx.obj, file)
     
 if __name__ == '__main__':
     
