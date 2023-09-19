@@ -4,7 +4,7 @@
 import os
 import numpy as np
 from tqdm import tqdm
-from helper.io_getfeatures import get_data, save_data
+from helper.io import load_data, save_data
 from scipy.signal import butter, zpk2sos, sosfiltfilt
 ### ------------------------------------------------------------------------###
 
@@ -58,7 +58,7 @@ class PreProcess:
         for i in tqdm(range(0, len(filelist)), desc='Progress:'): # loop through experiments 
         
             # clean and filter data
-            data = get_data(os.path.join(self.load_path, filelist[i]))
+            data = load_data(os.path.join(self.load_path, filelist[i]))
             data = self.filter_clean(data)
             
             # save clean data

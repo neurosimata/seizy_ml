@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ### ------------------- Imports ------------------- ###
-import features
+from helper import features
 import numpy as np
 ### ----------------------------------------------- ###
     
