@@ -9,8 +9,6 @@ from tqdm import tqdm
 import multiprocessing
 from sklearn.model_selection import StratifiedKFold
 from sklearn.model_selection import GridSearchCV
-from sklearnex import patch_sklearn 
-patch_sklearn(verbose=True)
 from joblib import dump
 from train.model_settings import models, hyper_params, metrics, fit_metric
 njobs = int(multiprocessing.cpu_count()*.8)
