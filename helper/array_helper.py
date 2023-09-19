@@ -2,253 +2,121 @@
 
 ### -------------- IMPORTS -------------- ###
 import numpy as np
-from numba import jit
-from scipy import signal
 ### ------------------------------------- ###
 
+def contiguous_ones(arr, dur):
+    count = 0  # Counts the number of contiguous True sequences
 
-def chunk_array(start, stop, div):
-    """
-    Get array to read labchart in chunks.
-    
-    Parameters
-    ----------
-    start : int
-    stop : int
-    div : int,
-
-    Returns
-    -------
-    idx : numpy array, 1st col = start, 2nd col = stop
-
-    """
-
-    rem = (stop-start+1) % div
-    trim_stop = (stop - rem)
-    temp_idx = np.linspace(start, trim_stop, round(trim_stop/div)+1, dtype=int)
-    temp_idx = np.append(temp_idx, stop)
-    temp_idx = np.unique(temp_idx)
-    
-    # reshape into 2 column format
-    idx = np.zeros((len(temp_idx)-1, 2), dtype=int)
-    idx[:, 0] = temp_idx[:-1]
-    idx[:, 1] = temp_idx[1:]
-    idx[1:, 0] += 1
-    return idx
-
-@jit(nopython=True)
-def find_value(array, value, start=1, order=1):
-    """
-    Find exact value in array.
-    
-    --- Examples ---
-    a = np.array([1.5, 2,.5, 3.5, 5, 15])
-    idx = find_value(a, 2, start = 1, order = 1)
-    
-    Parameters
-    ----------
-    array : array
-    value : int/float, value to be found.
-    start = int, starting index
-    order : 1, search forwards
-          :-1, search reverse
-
-    Returns
-    -------
-    index, array
-    """ 
-
-    if order == 1:
-        for i in range(start, len(array)):
-            if array[i] == value:
-                return int(i)
-            
-    elif order == -1:
-        for i in range(start, -1, -1):
-            if array[i] == value:
-                return int(i)
-            
-@jit(nopython=True)               
-def remove_zeros(ref_pred, pred_array, bounds):
-    """   
-    Replace values with zeros.
-    
-    Parameters
-    ----------
-    ref_pred : ndarray, boolean array
-    pred_array : ndarray, boolean array
-    bounds : list, (elements remove before, after detected seizure)
-
-    Returns
-    -------
-    ref_pred : ndarray (szr_n,2), neighbor threshold
-
-    """
-    # remove neighbours that have zeros
-    for i in range(bounds[0], pred_array.shape[0] - bounds[1]):
-        if np.sum(pred_array[i-bounds[0]:i+bounds[1]+1]) != np.sum(bounds)+1:
-            ref_pred[i] = 0
-    return ref_pred
+    for val in arr:
+        if val:
+            count += 1
+        else:
+            count = 0
+        if count > dur: 
+            return True
+    return False
             
 
-def find_szr_idx(pred_array, dur=0):
+def find_szr_idx(pred_array, dur):
     """
-    find seizure bounds.
-    idx_bounds = find_szr_idx(rawpred, np.array([2,2]))
+    Identify seizure events and return their start and stop indices, only if they are larger than dur.
     
     Parameters
     ----------
-    pred_array : ndarray, boolean array
-    bounds: two element list, denoting neighbours bounds 
-       
+    pred_array : numpy.ndarray, 1D boolean array where `True` indicates a seizure event.
+    dur : int, Minimum duration in indices to consider an event valid; effectively acts as erosion.
+        
     Returns
     -------
-    idx_bounds : NUMPY ARRAY (szr_n,2)
-        index bounds for seizures.
+    idx_bounds : numpy.ndarray, 2D array of shape (n_events, 2) containing start and stop indices of valid events.
     
+    Examples
+    --------
+    >>> pred_array = np.array([False, True, False, True, True, False, True])
+    >>> find_szr_idx(pred_array, dur=1)
+    array([[3, 4]])
     """
     
-    # make a copy of the array
-    ref_pred = np.copy(pred_array)
-    
-    # get min peak distance
-    distance = 1
-    
-    # append 1 to beginning and end
-    ref_pred = np.concatenate((np.zeros(1), ref_pred, np.zeros(1)))
-    
-    # get signal peaks        
-    idx = signal.find_peaks(ref_pred, height = 1, distance = distance)[0]
-  
-    # get index bounds
-    idx_bounds = np.zeros([len(idx),2], dtype=int)
-   
-    for i in range(len(idx)):
-        idx_bounds[i,0] = find_value(ref_pred, 0, start = idx[i], order = -1) + 1
-        idx_bounds[i,1] = find_value(ref_pred, 0, start = idx[i], order = 1) - 1
+    # append zeros, find seizure bounds
+    ref_pred = np.concatenate((np.zeros(1), pred_array, np.zeros(1)))
+    transitions = np.diff(ref_pred)
+    rising_edges = np.where(transitions == 1)[0]
+    falling_edges = np.where(transitions == -1)[0] - 1 # remove one
+    idx_bounds = np.column_stack((rising_edges, falling_edges))
      
-    # remove seizures smaller than dur   
+    # remove seizures smaller than dur
     idx_length = idx_bounds[:,1] - idx_bounds[:,0]
-    idx_bounds = idx_bounds[idx_length>=dur,:]
-    
-    # get original index
-    idx_bounds = idx_bounds-1
-    
+    idx_bounds = idx_bounds[idx_length >= dur,:]
+
     return idx_bounds
 
 
 def merge_close(bounds, merge_margin=5):
     """
-    merge_close(bounds, merge_margin = 5)
-
-    Parameters
-    ----------
-    bounds : 2D ndarray (rows = seizure segments, columns =[start,stop])
-    merge_margin : Int, optional
-
-    Returns
-    -------
-    bounds_out : 2D ndarray, merged array (rows = seizure segments, columns =[start,stop])
-
-    """
-    
-    if bounds.shape[0] < 2: # if less than two seizures exit
-        return bounds
-    
-    # copy of bounds
-    bounds_out = np.copy(bounds) 
-
-    # find bounds separated by less than merge_margin
-    delta = bounds[1:,0] - bounds[:-1,1]
-    merge_idx = delta < merge_margin; 
-    
-    # padd with zeros for peak detection
-    element = np.zeros(1, dtype=bool)
-    merge_idx = np.concatenate((element, merge_idx, element))
-    merge_idx = find_szr_idx(merge_idx)
-    merge_idx[:, 1] +=1
-    merge_idx -= 1  # (-1 for extra addition at 0 element)
-    
-    # make a copy and leave unchanged, index for original array
-    idx = np.copy(merge_idx)
-
-    for i in range(merge_idx.shape[0]):                                             # loop though index
-        low = merge_idx[i,0]; upper = merge_idx[i,1]                                # get upper and lower boundaries
-        bounds_out[ merge_idx[i,0],:] = [bounds[idx[i,0],0], bounds[idx[i,1],1]]    # replace merged  
-        rmv_idx = np.linspace(low, upper, int(upper-low)+1)                         # get removal index
-        rmv_idx = np.delete(rmv_idx,0).astype(np.int64)                             # remove first element and convert to int
-        bounds_out = np.delete(bounds_out, rmv_idx , axis=0)                        # delete next element
-        merge_idx -= rmv_idx.shape[0]                                               # remove one from index because of deleted element 
-        
-    return bounds_out
-        
-
-# find matching seizures     
-@jit(nopython=True) 
-def match_szrs(idx_true, idx_pred, err_margin = 5):
-    """
-    match_szrs(idx_true,idx_pred, err_margin)
-
-    Parameters
-    ----------
-    idx_true : Bool, ndarray, User defined (ground truth) boolean index
-    idx_pred : Bool, ndarray, Predicted index
-    err_margin : int, optional, Default values = 5.
-
-    Returns
-    -------
-    matching : int, number of matching seizures
-
-    """
-    matching = 0 # number of matching seizures
-    
-    for i in range(idx_true.shape[0]):
-        
-        # does min bound match within error margin?
-        min_bound = np.any(np.abs(np.subtract(idx_true[i,0],idx_pred[:,0]))<err_margin)
-        
-        # does max bound match within error margin?
-        max_bound  = np.any(np.abs(np.subtract(idx_true[i,1],idx_pred[:,1]))<err_margin)
-        
-        # do both bounds match?
-        if max_bound is True & min_bound is True:
-            matching += 1
-            
-    return matching
-
-# find matching seizures method 2 with index (preferred method)
-@jit(nopython=True) 
-def match_szrs_idx(bounds_true, y_pred, bounds):
-    """
-    find index of matching seizures.
+    Merge closely spaced seizure segments within a given margin.
     
     Parameters
     ----------
-    bounds_true : np.array, index of true seizures  
-    y_pred : np.array, binary predictions of model
-    bounds : np.array, (elements to remove before or after seizure)
-    
+    bounds : numpy.ndarray, 2D array where each row represents start and stop indices of a seizure segment.
+    merge_margin : int, Maximum gap between segments to trigger a merge.
+        
     Returns
     -------
-    idx, containing ones or zeros
+    numpy.ndarray
+        2D array containing start and stop indices of merged segments.
     
+    Example
+    -------
+    >>> merge_close(np.array([[5, 10], [15, 20], [22, 30]]), 3)
+    np.array([[5, 10], [15, 30]])
     """
-    # create empty vector
+
+    if bounds.shape[0] < 2:
+            return bounds
+    
+    merged_bounds = []
+    current_start, current_end = bounds[0]
+
+    for start, end in bounds[1:]:
+        if start - current_end < merge_margin:
+            current_end = end  # Extend the current segment
+        else:
+            merged_bounds.append([current_start, current_end])
+            current_start, current_end = start, end  # Start a new segment
+
+    merged_bounds.append([current_start, current_end])  # Append the last segment
+
+    return np.array(merged_bounds)
+
+
+def match_szrs_idx(bounds_true, y_pred, dur):
+    """
+    Check for matching seizures in predictions based on ground-truth events.
+
+    Parameters
+    ----------
+    bounds_true : numpy.ndarray, 2D array of start and stop indices for each true seizure event.
+    y_pred : numpy.ndarray, 1D binary array with model's seizure predictions.
+    dur : in,  Minimum length of contiguous ones for a match.
+
+    Returns
+    -------
+    idx : numpy.ndarray
+        1D binary array indicating matching seizure events.
+
+    Example
+    -------
+    >>> match_szrs_idx(np.array([[100, 150], [200, 250]]), np.array([0, 1, ...]), 2)
+    np.array([1, 0])
+    """
     idx = np.zeros(bounds_true.shape[0])
-    
+     
     for i in range(bounds_true.shape[0]):
-        
-        # get predictions in seizure range
-        pred = y_pred[bounds_true[i,0]:bounds_true[i,1] + 1]
-        
-        # get sum of continous predictions > more than 10 seconds
-        sum_continous_segments = np.sum(remove_zeros(pred.copy(),
-                                                     pred, bounds))
-        
-        # pass to index array
-        idx[i] = sum_continous_segments
- 
-    return idx > 0 # convert to logic
+        pred = y_pred[bounds_true[i, 0]:bounds_true[i, 1] + 1]
+        idx[i] = contiguous_ones(pred, dur)
+
+    return idx.astype(bool)
+
 
 
 
