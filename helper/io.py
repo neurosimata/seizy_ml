@@ -42,8 +42,14 @@ def save_data(save_path, data):
         # Saving Parameters
         atom = tables.Float64Atom() # declare data type 
         fsave = tables.open_file(save_path , mode='w') # open tables object
-        ds = fsave.create_earray(fsave.root, 'data', atom, # create data store 
-                                    [0, data.shape[1], data.shape[2]])
+        
+        # create data store 
+        if len(data.shape) == 3:
+            ds = fsave.create_earray(fsave.root, 'data', atom,
+                                        [0, data.shape[1], data.shape[2]])
+        elif len(data.shape) == 2:
+            ds = fsave.create_earray(fsave.root, 'data', atom,
+                                        [0, data.shape[1]])
         ds.append(data) # append data
         fsave.close() # close tables object
         return 1
