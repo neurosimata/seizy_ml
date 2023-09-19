@@ -105,7 +105,6 @@ def train_and_save_models(trained_model_path, x, y, feature_space):
     
     # perform grid train, save best estimators
     df_list = []
-    print('-> Training:')
     for m in models:
         train_df = grid_train(trained_model_path, m,  x, y, feature_space)
         df_list.append(train_df)
