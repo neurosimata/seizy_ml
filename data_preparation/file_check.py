@@ -3,7 +3,7 @@
 ### -------------------------------- IMPORTS ------------------------------ ###
 import os
 from tqdm import tqdm
-from helper.io_getfeatures import get_data
+from helper.io import load_data
 ### ------------------------------------------------------------------------###
 
 def check_main(parent_path, data_dir, processed_dir, model_predictions_dir):
@@ -156,7 +156,7 @@ def check_h5_files(path, win, fs, channels=2):
     
     for file in tqdm(filelist, total=len(filelist), desc='Checking files:'):
         try:
-            data = get_data(os.path.join(path, file))
+            data = load_data(os.path.join(path, file))
         except:
             error.append('File: ' + file + ' could not be read.')
         
