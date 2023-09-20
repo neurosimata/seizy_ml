@@ -243,6 +243,7 @@ def train(ctx, p):
     # imports
     import numpy as np
     import pandas as pd
+    from sklearn.preprocessing import StandardScaler
     from train.train_models import train_and_save_models
     from helper.io import load_data, save_data
     from data_preparation.preprocess import PreProcess
@@ -293,6 +294,7 @@ def train(ctx, p):
         print('-> Extracting Features:')
         features, feature_labels = compute_features(data, ctx.obj['single_channel_features'], ctx.obj['cross_channel_features'],
                          ctx.obj['channels'])
+        features = StandardScaler().fit_transform(features)
         np.savetxt(os.path.join(train_path, 'feature_labels.csv'), feature_labels, fmt="%s")
         save_data(os.path.join(train_path, 'features.h5'), features)
     
