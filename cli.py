@@ -6,7 +6,18 @@ import os
 import yaml
 ### ----------------------------------------------------------------- ###
 
+
 class CustomOrderGroup(click.Group):
+    """
+    A custom Click group that maintains the order of commands added to it.
+
+    This class extends the `click.Group` class and overrides the `command` and `list_commands` methods
+    to keep track of the order in which commands are added to the group. The order is stored in the
+    `commands_in_order` attribute, which is a list of command names.
+
+    Attributes:
+        commands_in_order (list): A list of command names in the order they were added to the group.
+    """
     def __init__(self, **attrs):
         super(CustomOrderGroup, self).__init__(**attrs)
         self.commands_in_order = []
@@ -20,6 +31,7 @@ class CustomOrderGroup(click.Group):
 
     def list_commands(self, ctx):
         return self.commands_in_order
+
 
 @click.group(cls=CustomOrderGroup)
 @click.pass_context
