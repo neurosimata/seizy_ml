@@ -147,7 +147,7 @@ class ModelPredict:
         
         # if seizures are detected, merge close segments
         if bounds_pred.shape[0] > 0:
-            bounds_pred = merge_close(bounds_pred, merge_margin=self.merge)
+            bounds_pred = merge_close(bounds_pred, merge_margin=self.dilation)
             
         return y_pred, bounds_pred 
 
