@@ -87,7 +87,42 @@ class ModelPredict:
         self.selected_features = selected_features
         self.model = load(model_path +'.joblib')
         print('Model loaded:', self.model)
+
+    def compute_metrics(self, file_id, y_pred, bounds_pred):
+        """
+        Computes and saves additional metrics such as the number of seizures detected 
+        and the recording length for a given file to display during seizure verification.
+
+        Parameters
+        ----------
+        file_id : str
+            The file name with no extension.
+        y_pred : 1D array
+            The binary predictions.
+        bounds_pred : 2D array
+            The start and end points of detected seizures.
+
+        Returns
+        -------
+        None
+        """
+        # Calculate the number of seizures detected
+        num_seizures = bounds_pred.shape[0]
         
+        # Calculate the recording length in hours
+        recording_length = y_pred.shape[0] * self.win/60/60
+        
+        # Save these metrics in a dictionary
+        metrics = {
+            'file_id': file_id,
+            'num_seizures': num_seizures,
+            'recording_length': recording_length
+        }
+        
+        # Write the metrics to a JSON file
+        import json
+        with open(os.path.join(self.save_path, f"{file_id}_metrics.json"), 'w') as f:
+            json.dump(metrics, f)
 
     def predict(self):
         """
@@ -109,6 +144,9 @@ class ModelPredict:
             
             # Get predictions (1D-array)
             y_pred, bounds_pred = self.get_feature_pred(filelist[i])
+
+            # Compute and save additional metrics
+            self.compute_metrics(filelist[i], y_pred, bounds_pred)
             
             # Convert prediction to binary vector and save as .csv
             ModelPredict.save_idx(os.path.join(self.save_path, filelist[i].replace('.h5','.csv')), y_pred, bounds_pred)
