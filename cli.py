@@ -308,7 +308,7 @@ def train(ctx, p):
             y = load_data(os.path.join(train_path, 'y.h5'))
             feature_space = pd.read_csv(os.path.join(train_path,'feature_space.csv'))
          
-        trained_model_path = os.path.join(train_path, 'models')
+        trained_model_path = os.path.join(train_path, ctx.obj['trained_model_dir'])
         print('-> Training:')
         train_df = train_and_save_models(trained_model_path, features, y, feature_space)
         train_df.to_csv(os.path.join(train_path, 'trained_models.csv'), index=False)
