@@ -2,7 +2,7 @@ channels:
 - eeg1
 - eeg2
 - eeg3
-data_dir: h5_data
+data_dir: data
 file_check: false
 fs: 100
 single_channel_features:
