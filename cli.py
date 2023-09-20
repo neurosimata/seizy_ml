@@ -233,6 +233,13 @@ def extractproperties(ctx):
 def train(ctx, p):
     """* Train Models """
     
+    # get child folders and create success list for each folder
+    if not os.path.exists(ctx.obj['parent_path']):
+        click.secho(f"\n -> Parent path '{ctx.obj['parent_path']}' was not found." +\
+                    " Please run -setpath-.\n",
+                    fg='yellow', bold=True)
+        return
+    
     # imports
     import numpy as np
     import pandas as pd
