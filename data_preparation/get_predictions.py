@@ -6,59 +6,92 @@ from tqdm import tqdm
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 from joblib import load
+from helper.io import load_data
 from helper.array_helper import find_szr_idx, merge_close
-from helper import features
-from helper.io_getfeatures import get_data, get_features_allch
+from helper.get_features import compute_selected_features
 ### ------------------------------------------------------------------------###
-
-# define model and features
-model_name = 'gnb_model'
-feature_idx = np.array([1,1,1,1,0,0,0,0,0,0,1,1,1,0,0,0,0,0,1,0,0])
-param_list = (features.autocorr, features.line_length, features.rms, 
-              features.mad, features.var, features.std, features.psd, 
-              features.energy, features.get_envelope_max_diff,)
-cross_ch_param_list = (features.cross_corr, features.signal_covar,
-                       features.signal_abs_covar,)
 
 
 class ModelPredict:
     """
     Class for batch seizure prediction.
+
+    Attributes
+    ----------
+    load_path : str
+        The path to the directory containing the input data.
+    save_path : str
+        The path to the directory where the output data will be saved.
+    channels : list
+        A list of channel names.
+    win : int
+        The window size in seconds.
+    fs : float
+        The sampling frequency in Hz.
+    min_seizure_duration : int
+        The minimum duration of a seizure in seconds.
+    erode : int
+        The number of windows to erode from the start and end of a seizure.
+    dilation : int
+        The number of windows to dilate a seizure.
+
+    Methods
+    -------
+    __init__(self, model_path: str, load_path: str, save_path: str, selected_features: list, channels: list, win: int, fs: float)
+        Initializes the ModelPredict class.
+    predict(self)
+        Runs batch predictions.
+    get_feature_pred(self, file_id)
+        Gets predictions for a given file.
+    save_idx(file_path, y_pred, bounds_pred)
+        Saves user predictions to a CSV file as binary.
     """
-    
-    def __init__(self, load_path, save_path, win, fs):
+
+    def __init__(self, model_path: str, load_path: str, save_path: str, 
+                 selected_features: list, channels: list, win: int, fs: float):
         """
+        Initializes the ModelPredict class.
 
         Parameters
         ----------
+        model_path : str
+            The path to the trained model file.
         load_path : str
+            The path to the directory containing the input data.
         save_path : str
+            The path to the directory where the output data will be saved.
+        selected_features : list
+            A list of selected features to be used in the model.
+        channels : list
+            A list of channel names.
         win : int
-        fs : int/float
+            The window size in seconds.
+        fs : float
+            The sampling frequency in Hz.
 
         Returns
         -------
-        None.
-
+        None
         """
-            
-        # get main path and load properties file
+        # Set the input parameters as class attributes
         self.load_path = load_path
         self.save_path = save_path
+        self.channels = channels
         self.win = win
         self.fs = fs    
-        self.erode = 1 # in window bins
-        self.merge = 5 # in window bins
-
-        # load model
-        self.feature_select = np.where(feature_idx)[0]
-        self.model = load(model_name +'.joblib')
+        self.min_seizure_duration = 10 # minimum seizure duration
+        self.erode = int(self.min_seizure_duration/self.win)-1
+        self.dilation = 5 # in window bins
+        
+        # Load the trained model
+        self.selected_features = selected_features
+        self.model = load(model_path +'.joblib')
         print('Model loaded:', self.model)
         
 
     def predict(self):
         """
-        Run batch predictions.
+        Runs batch predictions.
         """
        
         print('---------------------------------------------------------------------------\n')
@@ -75,10 +108,10 @@ class ModelPredict:
         for i in tqdm(range(len(filelist)), desc = 'Progress'):
             
             # Get predictions (1D-array)
-            data, bounds_pred = self.get_feature_pred(filelist[i])
+            y_pred, bounds_pred = self.get_feature_pred(filelist[i])
             
             # Convert prediction to binary vector and save as .csv
-            ModelPredict.save_idx(os.path.join(self.save_path, filelist[i].replace('.h5','.csv')), data, bounds_pred)
+            ModelPredict.save_idx(os.path.join(self.save_path, filelist[i].replace('.h5','.csv')), y_pred, bounds_pred)
             
         print('---> Predictions have been generated for: ', self.save_path + '.','\n')
         print('---------------------------------------------------------------------------\n')
@@ -86,98 +119,65 @@ class ModelPredict:
                
     def get_feature_pred(self, file_id):
         """
-        Get predictions
+        Gets predictions for a given file.
 
         Parameters
         ----------
-        file_id : str, file name with no extension
+        file_id : str
+            The file name with no extension.
 
         Returns
         -------
-        data : 3d Numpy Array (1D = segments, 2D = time, 3D = channel)
-        bounds_pred : 2D Numpy Array (rows = seizures, cols = start and end points of detected seizures)
-
+        y_pred : 1D array
+            The binary predictions.
+        bounds_pred : 2D array
+            The start and end points of detected seizures.
         """
         
         # get data and true labels
-        data = get_data(os.path.join(self.load_path, file_id))
+        data = load_data(os.path.join(self.load_path, file_id))
         
         # Eextract features and normalize
-        x_data, labels = get_features_allch(data, param_list, cross_ch_param_list)
-        x_data = StandardScaler().fit_transform(x_data)
+        features, _ = compute_selected_features(data, self.selected_features, self.channels)
+        features = StandardScaler().fit_transform(features)
         
         # get predictions
-        y_pred = self.model.predict(x_data[:,self.feature_select])
+        y_pred = self.model.predict(features)
         bounds_pred = find_szr_idx(y_pred, dur=self.erode)
         
         # if seizures are detected, merge close segments
         if bounds_pred.shape[0] > 0:
             bounds_pred = merge_close(bounds_pred, merge_margin=self.merge)
             
-        return data, bounds_pred 
+        return y_pred, bounds_pred 
 
             
-    def save_idx(file_path, data, bounds_pred):
+    def save_idx(file_path, y_pred, bounds_pred):
         """
-        Save user predictions to csv file as binary
-    
+        Saves user predictions to a CSV file as binary.
+
         Parameters
         ----------
-        file_path : Str, path to file save
-        data : 3d Numpy Array (1D = segments, 2D = time, 3D = channel)
-        bounds_pred : 2D Numpy Array (rows = seizures, cols = start and end points of detected seizures) 
-        
+        file_path : str
+            The path to the file.
+        y_pred : 1D array
+            The binary predictions.
+        bounds_pred : 2D array
+            The start and end points of detected seizures.
+
         Returns
         -------
-        None.
-    
+        None
         """
         # pre allocate file with zeros
-        ver_pred = np.zeros(data.shape[0])
-    
-        for i in range(bounds_pred.shape[0]):   # assign index to 1
+        ver_pred = np.zeros(y_pred.shape[0])
         
+        for i in range(bounds_pred.shape[0]):
             if bounds_pred[i,0] > 0:   
                 ver_pred[bounds_pred[i,0]:bounds_pred[i,1]+1] = 1
-            
-        # save file
+                
+        # save
         np.savetxt(file_path, ver_pred, delimiter=',', fmt='%i')
 
     
    
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            

@@ -139,11 +139,19 @@ def predict(ctx):
                     fg='yellow', bold=True)
         return
     
+    import numpy as np
     from data_preparation.get_predictions import ModelPredict
+    
+    # get model id and train path!!!!!!!!!!!!!
+    train_path = os.path.join(ctx.obj['parent_path'], ctx.obj['train_dir'])
+    model_path = os.path.join(train_path, ctx.obj['model_id'])
+    selected_features = np.loadtxt(os.path.join(train_path, 'selected_features.csv'), dtype=str)
+    
     # get paths and model predictions
     load_path = os.path.join(ctx.obj['parent_path'], ctx.obj['processed_dir'])
     save_path = os.path.join(ctx.obj['parent_path'], ctx.obj['model_predictions_dir'])
-    model_obj = ModelPredict(load_path, save_path, win=ctx.obj['win'], fs=ctx.obj['fs'])
+    model_obj = ModelPredict(model_path, load_path, save_path, selected_features,
+                             channels=ctx.obj['channels'], win=ctx.obj['win'], fs=ctx.obj['fs'],)
     model_obj.predict()
     ctx.obj.update({'predicted_check':True})
     
@@ -294,7 +302,14 @@ def train(ctx, p):
         train_df.to_csv(os.path.join(train_path, 'trained_models.csv'), index=False)
         
         # find model with best f1 score and save to settings
-        model_id = train_df.loc[train_df['F1'].idxmax(), 'ID']
+        idx = train_df['F1'].idxmax()
+        model_id = train_df.loc[idx, 'ID']
+        
+        # save model features
+        selected_features = feature_space.columns[feature_space.loc[idx]==1]
+        np.savetxt(os.path.join(train_path, 'selected_features.csv'), selected_features, fmt="%s")
+
+        # pass model id to settings
         ctx.obj.update({'model_id': model_id})
         print('Best model based on F1 score was selected:', model_id)
         
