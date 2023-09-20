@@ -25,6 +25,7 @@ parent_path: ""
 predicted_check: false
 processed_check: false
 train_dir: training
+trained_model_dir: models
 processed_dir: processed
 true_dir: ground_truth
 verified_predictions_dir: verified_predictions
