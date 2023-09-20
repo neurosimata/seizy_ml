@@ -155,9 +155,8 @@ def predict(ctx):
     from data_preparation.get_predictions import ModelPredict
     
     # get model path and features
-    train_path = os.path.join(ctx.obj['parent_path'], ctx.obj['train_dir'])
-    model_path = os.path.join(train_path, ctx.obj['trained_model_dir'], ctx.obj['model_id'])
-    selected_features = np.loadtxt(os.path.join(train_path, 'selected_features.csv'), dtype=str)
+    model_path = os.path.join(ctx.obj['train_path'], ctx.obj['trained_model_dir'], ctx.obj['model_id'])
+    selected_features = np.loadtxt(os.path.join(ctx.obj['train_path'], 'selected_features.csv'), dtype=str)
     
     # get paths and model predictions
     load_path = os.path.join(ctx.obj['parent_path'], ctx.obj['processed_dir'])
@@ -263,7 +262,8 @@ def train(ctx, p):
                     fg='yellow', bold=True)
         return
     
-    train_path = os.path.join(ctx.obj['parent_path'], ctx.obj['train_dir'])
+    # get train path and pass to settings
+    train_path = ctx.obj['parent_path']
     
     # pre-process data (filter, remove extreme outliers)
     if 'preprocess' in process_type:
@@ -330,10 +330,12 @@ def train(ctx, p):
         selected_features = feature_space.columns[feature_space.loc[idx]==1]
         np.savetxt(os.path.join(train_path, 'selected_features.csv'), selected_features, fmt="%s")
 
-        # pass model id to settings
+        # pass model id and train path to settings
         ctx.obj.update({'model_id': model_id})
+        ctx.obj.update({'train_path': ctx.obj['parent_path']})
         print('Best model based on F1 score was selected:', model_id)
-        
+    
+    # save settings
     with open(settings_path, 'w') as file:
         yaml.dump(ctx.obj, file)
     
