@@ -2,6 +2,7 @@
 
 ### ---------------- IMPORTS ------------------ ###
 import os
+import json
 import tables
 from pick import pick
 import numpy as np
@@ -35,13 +36,37 @@ class UserVerify:
 
         # set full paths 
         self.processed_path = os.path.join(parent_path, processed_dir)
-        self.raw_predictions_path = os.path.join(parent_path, model_predictions)
+        self.model_predictions_path = os.path.join(parent_path, model_predictions)
         self.verified_predictions_path = os.path.join(parent_path, verified_predictions_dir)
 
         # make path if it doesn't exist
         if os.path.exists(self.verified_predictions_path) is False:
             os.mkdir(self.verified_predictions_path)
 
+    def read_metrics(self, file_id):
+        """
+        Read metrics from json file.
+        
+        Parameters
+        ----------
+        file_id : str
+            file id of file to read metrics from.
+            
+        Returns
+        -------
+        metrics : dict
+            dictionary of metrics.
+                
+        """
+        json_path = os.path.join(self.model_predictions_path, f"{file_id}_metrics.json")
+        try:
+            with open(json_path, 'r') as f:
+                metrics = json.load(f)
+                print(metrics)
+        except FileNotFoundError:
+            metrics = {'file_id': file_id, 'num_seizures': 'N/A', 'recording_length': 'N/A'}
+        return metrics
+        
     def select_file(self):
         """
         Select file to load from list. Adds stars next to files that have been scored already.
@@ -52,7 +77,7 @@ class UserVerify:
         """
        
         # get all files in raw predictions folder 
-        rawpredlist = list(filter(lambda k: '.csv' in k, os.listdir(self.raw_predictions_path)))
+        rawpredlist = list(filter(lambda k: '.csv' in k, os.listdir(self.model_predictions_path)))
        
         # get all files in user verified predictions
         verpredlist = list(filter(lambda k: '.csv' in k, os.listdir(self.verified_predictions_path)))
@@ -64,16 +89,27 @@ class UserVerify:
         analyzed_filelist = list(set(rawpredlist) - set(not_analyzed_filelist))
         
         # filelist
-        filelist = [' *** ' + s for s in analyzed_filelist] +  not_analyzed_filelist           
+        filelist = not_analyzed_filelist + analyzed_filelist
+
+        # create display list
+        display_list = []
+        lists = [not_analyzed_filelist, analyzed_filelist]
+        append_strs = ['','***']
+        for append_str, filelists in zip(append_strs, lists):
+            for file in filelists:
+                metrics = self.read_metrics(file.replace('.csv',''))
+                display_list.append(append_str + ' ' + str(metrics)[1:-1].replace("'",""))
         
         # select from command list
         title = 'Please select file for analysis: '
-        option, index = pick(filelist, title, indicator = '-> ')
-        return option.replace(' *** ','')
+        display_list, index = pick(display_list, title, indicator = '-> ')
+
+        return filelist[index]
 
 
     def get_bounds(self, file_id):
         """
+        Load data and calulate seizure bounds from predictions.
 
         Parameters
         ----------
@@ -89,7 +125,7 @@ class UserVerify:
         print('-> File being analyzed: ', file_id)
 
         # Get predictions
-        pred_path = os.path.join(self.raw_predictions_path, file_id)
+        pred_path = os.path.join(self.model_predictions_path, file_id)
         bin_pred = np.loadtxt(pred_path, delimiter=',', skiprows=0)
         idx_bounds = find_szr_idx(bin_pred, dur=1)
         
@@ -103,6 +139,7 @@ class UserVerify:
         print('>>>>', idx_bounds.shape[0], 'seizures detected')
         
         return data, idx_bounds
+
 
               
     def save_emptyidx(self, data_len, file_id):
@@ -124,7 +161,3 @@ class UserVerify:
     
 
        
-        
-        
-        
-        

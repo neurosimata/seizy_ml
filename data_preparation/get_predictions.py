@@ -115,13 +115,13 @@ class ModelPredict:
         
         # Save these metrics in a dictionary
         metrics = {
-            'file_id': file_id.replace('.h5','_metrics.json'),
+            'file_id': file_id,
             'num_seizures': num_seizures,
             'recording_length': recording_length
         }
 
         # Write the metrics to a JSON file
-        with open(os.path.join(self.save_path, metrics['file_id']), 'w') as f:
+        with open(os.path.join(self.save_path, file_id.replace('.h5','_metrics.json')), 'w') as f:
             json.dump(metrics, f)
 
     def predict(self):

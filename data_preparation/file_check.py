@@ -63,7 +63,7 @@ def check_main(parent_path, data_dir, processed_dir, model_predictions_dir):
         processed_check = False
     if not os.path.exists(model_predictions_path):
         model_predictions_check = False
-    
+
     if processed_check:
         h5 = set(x.replace('.h5', '') for x in os.listdir(h5_path))
         processed = set(x.replace('.h5', '') for x in os.listdir(processed_path))
