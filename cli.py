@@ -154,9 +154,9 @@ def predict(ctx):
     import numpy as np
     from data_preparation.get_predictions import ModelPredict
     
-    # get model id and train path!!!!!!!!!!!!!
+    # get model path and features
     train_path = os.path.join(ctx.obj['parent_path'], ctx.obj['train_dir'])
-    model_path = os.path.join(train_path, ctx.obj['model_id'])
+    model_path = os.path.join(train_path, ctx.obj['trained_model_dir'], ctx.obj['model_id'])
     selected_features = np.loadtxt(os.path.join(train_path, 'selected_features.csv'), dtype=str)
     
     # get paths and model predictions
