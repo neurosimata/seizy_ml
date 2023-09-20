@@ -2,6 +2,7 @@
                
 ### ------------------------ IMPORTS -------------------------------------- ###               
 import os
+import json
 from tqdm import tqdm
 import numpy as np
 from sklearn.preprocessing import StandardScaler
@@ -114,14 +115,13 @@ class ModelPredict:
         
         # Save these metrics in a dictionary
         metrics = {
-            'file_id': file_id,
+            'file_id': file_id.replace('.h5','_metrics.json'),
             'num_seizures': num_seizures,
             'recording_length': recording_length
         }
-        
+
         # Write the metrics to a JSON file
-        import json
-        with open(os.path.join(self.save_path, f"{file_id}_metrics.json"), 'w') as f:
+        with open(os.path.join(self.save_path, metrics['file_id']), 'w') as f:
             json.dump(metrics, f)
 
     def predict(self):
