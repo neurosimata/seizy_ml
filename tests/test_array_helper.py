@@ -130,8 +130,3 @@ def test_merge_close_edge_cases(create_binary_array, length, index,
 
 
 
-
-
-
-
-
