@@ -39,6 +39,6 @@ For configuration settings and file preparation check the [configuration](docs/c
 ### Tutorials
 - Before using **SeizyML** for seizure detection a model should be first trained on ground truth (hand-scored) data.
 - To train a model follow the guidelines in the [training](docs/training.md) tutorial.
-- Check out here how you can use **SeizyML** for seizure detection [tutorial doc](docs/tutorial.md).
+- Check out the [tutorial doc](docs/tutorial.md) for a quick guide to using **SeizyML** for seizure detection.
 
 ---
