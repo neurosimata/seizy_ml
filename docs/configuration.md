@@ -1,7 +1,7 @@
 ## Configuration settings
 
 All settings are stored in the [config.yaml](/config.yaml) file.
-* The [config.yaml](/config.yaml) is created when the path is first in **SeizyML** set from [temp_config.yaml](/temp_config.yaml).
+** The [config.yaml](/config.yaml) is created when the path is first set in **SeizyML** set from [temp_config.yaml](/temp_config.yaml).
 
 #### -> To be provided by user
 - **parent_path** : path to parent directory, e.g. "C:\\Users\\...\\parent directory"
