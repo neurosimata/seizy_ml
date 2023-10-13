@@ -1,5 +1,7 @@
 ## Main Tutorial
 
+** **Note:** ** A model should be [trained](training.md) before using the app for seizure detection
+
 1) **Launch Conda Shell Prompt, navigate to seizy_ml directory and activate the virtual environment.**
 ```
 cd ./seizy_ml
@@ -17,8 +19,7 @@ python cli.py setpath 'path'
 ```
 python cli.py filecheck
 ```
-- This step checks that the h5 files have the correct dimensions. For help on how to convert files to h5 have a look at the [h5_conversion script](/examples/to_h5.py).
-- Each h5 file should contain **Two** LFP/EEG channels [configuration settings](configuration.md).
+- ⚠️ This step checks that the h5 files have the correct dimensions. For help on how to convert files to h5 have a look at the [h5_conversion script](/examples/to_h5.py).
 
 4) **Preprocess data.**
 
