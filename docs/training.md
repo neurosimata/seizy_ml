@@ -10,10 +10,12 @@ conda activate seizyml
 ```
 python cli.py setpath 'path'
 ```
-- This is the path to h5 training data.
-- All subsequent model predictions will reside here,
+- This is the path to h5 training data. 
+- ⚠️ The training data should be named `data.h5` and have a shape of **[nrows, 500 (win*fs), channels].**
+- ⚠️ The training labels should be named  `y.h5` and have a shape of **[nrows].**
+- ⚠️ The `win`, `fs`, `channels` fields should be set in [config.yaml](/config.yaml) to match the shape of the data.
 - **This folder** should be kept in **one location** as the trained models will be stored here.
-- **If the folder is moved**, then the *training_path* field in [config.yaml](/config.yaml) should be **updated** to reflect the new location.
+- **If the folder is moved**, then the `training_path` field in [config.yaml](/config.yaml) should be **updated** to reflect the new location.
 
 3) **Train model**
 ```
