@@ -2,7 +2,7 @@
 :snake: **SeizyML** uses a pre-trained gaussian naive bayes classifier to detect :detective: seizures from EEG recordings.
 After the seizures are detected, they can be manually verified with a user-friendly GUI.
 
-- Currently supports .h5 files containing 2 eeg/lfp channels.
+- Currently supports .h5 files as inputs.
 
 ---
 
