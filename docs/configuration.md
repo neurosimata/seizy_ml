@@ -1,7 +1,7 @@
 ## Configuration settings
 
-All settings are stored in the [config.yaml](/config.yaml) file.
-** The [config.yaml](/config.yaml) is created when the path is first set in **SeizyML** set from [temp_config.yaml](/temp_config.yaml).
+All settings are stored in the `config.yaml` file.
+** The `config.yaml` is created when the path is first set in **SeizyML** set from [temp_config.yaml](/temp_config.yaml).
 
 #### -> To be provided by user
 - **parent_path** : path to parent directory, e.g. "C:\\Users\\...\\parent directory"
@@ -10,7 +10,7 @@ All settings are stored in the [config.yaml](/config.yaml) file.
 - **win** : window size in seconds, default and recommended is 5 seconds
 - **fs** : sampling rate of .h5 files, default and recommended is 100 Hz
 
-:exclamation:The original LFP/EEG data have to be converted to .h5 files with the following 3D shape **[nrows, 500 (win*fs), Nchannels].**
+:exclamation:The original LFP/EEG data have to be converted to .h5 files with the following 3D shape **[nrows, 500 (win*fs), channels].**
 Check out the [h5_conversion script](/examples/to_h5.py) for more help.
 
 ---
