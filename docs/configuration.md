@@ -1,5 +1,7 @@
 ## Configuration settings
 
+All settings are stored in the [config.yaml](/config.yaml) file.
+
 #### -> To be provided by user
 - **parent_path** : path to parent directory, e.g. "C:\\Users\\...\\parent directory"
 - **data_dir** : child directory name where .h5 files are present, default is "h5_data"
@@ -7,7 +9,7 @@
 - **win** : window size in seconds, default and recommended is 5 seconds
 - **fs** : sampling rate of .h5 files, default and recommended is 100 Hz
 
-:exclamation:The original LFP/EEG data have to be converted to .h5 files with the following 3D shape **[nrows, 500 (win*fs), 2 (Nchannels)].**
+:exclamation:The original LFP/EEG data have to be converted to .h5 files with the following 3D shape **[nrows, 500 (win*fs), Nchannels].**
 Check out the [h5_conversion script](/examples/to_h5.py) for more help.
 
 ---
