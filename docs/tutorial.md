@@ -1,4 +1,4 @@
-## Tutorial
+## Main Tutorial
 
 1) **Launch Conda Shell Prompt, navigate to seizy_ml directory and activate the virtual environment.**
 ```
@@ -32,7 +32,7 @@ python cli.py preprocess
 ```
 python cli.py predict
 ```
-- Here model predictions will be generated using the GNB model.
+- Here selected features will be extracted and model predictions will be generated using the selected model from [training](trainining.md).
 
 6) **Verify seizures and adjust seizure boundaries.**
 - This will launch a prompt to allow for file selection for verification.
