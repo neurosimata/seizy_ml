@@ -25,7 +25,7 @@ python cli.py train
 - This is a multi-step process:
     - a) Data preprocessing (high pass filter and exterme outlier removal).
     - b) Feature extraction.
-    - c) Find 5 best feature sets and save.
+    - c) Find 5 best feature sets.
     - d) Train a GNB model on these 5 feature sets and select the one with highest F1 score.
     - The *model_id* will be stored in the [config.yaml](/config.yaml) file and will be used to load that model.
       
