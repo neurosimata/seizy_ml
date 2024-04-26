@@ -292,7 +292,7 @@ def train(ctx, p):
         if 'data' not in locals():
             data = load_data(os.path.join(train_path, 'data_clean.h5'))
         print('-> Extracting Features:')
-        features, feature_labels = compute_features(data, ctx.obj['single_channel_features'], ctx.obj['cross_channel_features'],
+        features, feature_labels = compute_features(data, ctx.obj['features'],
                          ctx.obj['channels'])
         features = StandardScaler().fit_transform(features)
         np.savetxt(os.path.join(train_path, 'feature_labels.csv'), feature_labels, fmt="%s")
