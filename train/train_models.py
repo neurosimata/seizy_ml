@@ -48,15 +48,16 @@ def grid_train(model_path, model_name,  x, y, feature_space):
                               param_grid=hyper_params[model_name],
                               n_jobs=njobs,
                               cv=cv,
-                              verbose=3,
+                              verbose=0,
                               scoring=metrics,
                               refit=fit_metric)
         feature_select = np.where(feature_space.loc[i])[0]
         search.fit(x[:, feature_select], y)
         
-        # create unique ID and save model
+        # create unique ID and save model with features labels
         uid = uuid4().hex
         best_model = search.best_estimator_
+        best_model.features = list(feature_space.columns[feature_select])
         dump(best_model, os.path.join(model_path, uid + '.joblib'))
         
         # create row list
@@ -104,7 +105,9 @@ def train_and_save_models(trained_model_path, x, y, feature_space):
     # perform grid train, save best estimators
     df_list = []
     for m in models:
+        print('Training model: ', m)
         train_df = grid_train(trained_model_path, m,  x, y, feature_space)
+        train_df['model'] = m
         df_list.append(train_df)
    
     return pd.concat(df_list).reset_index(drop=True)
