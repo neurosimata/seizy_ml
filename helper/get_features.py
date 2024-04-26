@@ -5,15 +5,14 @@ from helper import features
 import numpy as np
 ### ----------------------------------------------- ###
     
-def compute_features(data, single_channel_functions, cross_channel_functions, channel_names):
+def compute_features(data, single_channel_functions, channel_names):
     """
-    Compute single-channel and cross-channel features from given 3D data.
+    Compute features from given 3D data.
     
     Parameters
     ----------
     data : ndarray, 3D array of shape (segments, time, channels) containing the input data.
     single_channel_functions : List of function names for single channel features, defined in features.py.
-    cross_channel_functions : List of function names for cross channel features, defined in features.py.
     channel_names : List of channel names used to name the features.
 
     Returns
@@ -32,15 +31,6 @@ def compute_features(data, single_channel_functions, cross_channel_functions, ch
             feature_name = f"{func_name}-{channel_names[c]}"
             feature_labels.append(feature_name)
             features_list.append([func(data[s, :, c]) for s in range(num_segments)])
-    
-    # Calculating cross channel features
-    for i, func_name in enumerate(cross_channel_functions):
-        func = getattr(features, func_name)
-        for c1 in range(num_channels):
-            for c2 in range(c1+1, num_channels):
-                feature_name = f"{func_name}-{channel_names[c1]}-{channel_names[c2]}"
-                feature_labels.append(feature_name)
-                features_list.append([func(data[s, :, c1], data[s, :, c2]) for s in range(num_segments)])
 
     features_array = np.column_stack(features_list)  # Combining the feature arrays into a single 2D array
     return features_array, np.array(feature_labels)
