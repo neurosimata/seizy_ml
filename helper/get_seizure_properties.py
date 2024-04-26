@@ -32,8 +32,8 @@ def get_seizure_prop(parent_path, verified_predictions_dir, win):
     filelist = list(filter(lambda k: '.csv' in k, os.listdir(ver_path)))
     
     # get columns
-    cols = ['seizure number','avg seizure dur(s)', 'Seizure burden',
-            'Recording dur(hrs)']
+    cols = ['seizure_number','avg_seizure_dur_sec', 'total_time_seizing_sec',
+            'recording_dur_hrs']
     
     # save array
     save_array = np.zeros([len(filelist), len(cols)])
@@ -53,7 +53,7 @@ def get_seizure_prop(parent_path, verified_predictions_dir, win):
         if idx_bounds.shape[0]>0:
             save_array[i,0] = idx_bounds.shape[0]                              # seizure number
             save_array[i,1] = (np.sum(ver_pred)*win)/idx_bounds.shape[0]       # average seizure duration (seconds)     
-            save_array[i,2] = (save_array[i,0]* save_array[i,1]).sum()         # seizure burden
+            save_array[i,2] = (save_array[i,0]* save_array[i,1]).sum()         # total time seizing (seconds)
         
         save_array[i,3] = ver_pred.shape[0] * win/3600
     
@@ -61,8 +61,9 @@ def get_seizure_prop(parent_path, verified_predictions_dir, win):
     df = pd.DataFrame(data = save_array, columns = cols)    
     df.insert(0,'file_id', filelist) # append file id
     
-    # get seizure frequency
-    df['Seizures per hr'] = df['seizure number'] / df['Recording dur(hrs)'] 
+    # get seizure frequency and time seizing per hour
+    df['seizures_per_hour'] = df['seizure_number'] / df['recording_dur_hrs'] 
+    df['percent_time_seizing'] = 100*(df['total_time_seizing_sec']/3600) / df['recording_dur_hrs']
     
     # save file
     save_path = os.path.join(parent_path, 'seizure_properties.csv')
