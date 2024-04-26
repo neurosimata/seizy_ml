@@ -7,7 +7,7 @@ from sklearn.feature_selection import mutual_info_classif
 ##### ------------------------------------------------------------------- #####
 
 
-def feature_selection_and_ranking(x, y_true, feature_labels):
+def feature_selection_and_ranking(x, y_true, feature_labels, r_threshold):
     """
     This function performs feature selection by eliminating highly correlated features and then ranks 
     the selected features using ANOVA F-value and mutual information.
@@ -16,13 +16,13 @@ def feature_selection_and_ranking(x, y_true, feature_labels):
     x (numpy array): Array containing feature values
     y_true (numpy array): Array containing true labels
     feature_labels (list): List of feature labels
+    r_threshold (float): Threshold for correlation. Features with correlation above this threshold are considered highly correlated.
     
     Returns:
     None. A csv file named 'feature_metrics.csv' is saved in the current directory.
     """
 
     # Select features that are not highly correlated before proceeding with ranking
-    r_threshold = 0.99
     corr_matrix = np.corrcoef(x.T)
     corr_matrix = pd.DataFrame(corr_matrix, index=feature_labels, columns=feature_labels)
     corr_matrix = corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1).astype(bool))
@@ -72,15 +72,15 @@ def feature_selection_and_ranking(x, y_true, feature_labels):
     return feature_metrics
 
 
-def get_feature_space(feature_ranks, feature_size=[33,66],
-                  export_name='feature_space.csv'):
+def get_feature_space(feature_ranks, feature_size=[33,66]):
     """
     Create feature space from anova and mutual info ranks dataframe.
 
     Parameters
     ----------
     feature_ranks : pandas df, containing mnetrics
-    feature_size : list, Percent of features to select from ANOVA and MI ranks.
+    feature_size : list, Percent of features to select from ANOVA and MI ranks. Default is [33,66].
+
 
     Returns
     -------

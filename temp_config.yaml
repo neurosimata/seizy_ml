@@ -18,6 +18,7 @@ features:
     - alpha_power
     - beta_power
     - gamma_power
+feature_select_thresh: 0.95
 model_id: ""
 model_predictions_dir: model_predictions
 parent_path: ""

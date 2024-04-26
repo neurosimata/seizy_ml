@@ -305,7 +305,7 @@ def train(ctx, p):
             features = load_data(os.path.join(train_path, 'features.h5'))
         y = load_data(os.path.join(train_path, 'y.h5'))
         print('-> Selecting Features:')
-        feature_ranks = feature_selection_and_ranking(features, y, feature_labels)
+        feature_ranks = feature_selection_and_ranking(features, y, feature_labels, ctx.obj['feature_select_thresh'])
         feature_ranks.to_csv(os.path.join(train_path,'feature_ranks.csv'), index=False)
         feature_space = get_feature_space(feature_ranks, feature_size=[33,66])
         feature_space.to_csv(os.path.join(train_path,'feature_space.csv'), index=False)
