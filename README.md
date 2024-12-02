@@ -7,7 +7,7 @@ After the seizures are detected, they can be manually verified with a user-frien
 ---
 
 ### How to install
-1) Download and install [miniconda](https://docs.conda.io/en/latest/miniconda.html) on your platform
+1) Download and install [miniconda](https://repo.anaconda.com/miniconda/) on your platform.
 2) Clone or Download [SeizyML](https://github.com/neurosimata/seizy_ml/)
 3) Start Anaconda's shell prompt, navigate to */seizy_ml* and create conda environment:
 
