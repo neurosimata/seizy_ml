@@ -19,9 +19,9 @@ def load_data(load_path):
     """
     
     # load lfp/eeg data
-    f = tables.open_file(load_path, mode = 'r') # open tables object
+    f = tables.open_file(load_path, mode='r') # open tables object
     data = f.root.data[:]; f.close() # load data
-    
+    del f
     return data
 
 def save_data(save_path, data):
@@ -49,9 +49,14 @@ def save_data(save_path, data):
                                         [0, data.shape[1], data.shape[2]])
         elif len(data.shape) == 2:
             ds = fsave.create_earray(fsave.root, 'data', atom,
-                                        [0, data.shape[1]])
+                                        [0, data.shape[1]])    
+        elif len(data.shape) == 1:
+            ds = fsave.create_earray(fsave.root, 'data', atom,
+                                        [0])
+                
         ds.append(data) # append data
         fsave.close() # close tables object
+        del fsave
         return 1
     
     except Exception as e:
