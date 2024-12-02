@@ -6,19 +6,28 @@ file_check: false
 fs: 100
 features:
     - line_length
+    - kurtosis
+    - skewness
     - rms
     - mad
     - var
-    - std
-    - power
     - energy
-    - get_envelope_max_diff
+    - hjorth_mobility
+    - hjorth_complexity
     - delta_power
     - theta_power
     - alpha_power
     - beta_power
     - gamma_power
-feature_select_thresh: 0.95
+    - weighted_frequency
+    - spectral_entropy
+    - get_envelope_max_diff
+feature_select_thresh: 0.90
+feature_size:
+    - 5
+    - 10
+    - 15
+nleast_corr: 5
 model_id: ""
 model_predictions_dir: model_predictions
 parent_path: ""
