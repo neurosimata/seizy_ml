@@ -3,122 +3,73 @@
 import numpy as np
 import pandas as pd
 from sklearn.feature_selection import f_classif
-from sklearn.feature_selection import mutual_info_classif
 ##### ------------------------------------------------------------------- #####
 
 
-def feature_selection_and_ranking(x, y_true, feature_labels, r_threshold):
+def select_features(x, y_true, feature_labels, r_threshold, feature_size, nleast_correlated=0):
     """
-    This function performs feature selection by eliminating highly correlated features and then ranks 
-    the selected features using ANOVA F-value and mutual information.
+     Selects features based on ANOVA F-values, while dropping highly correlated features 
+     according to their ANOVA ranks, and optionally includes the least correlated features.
     
-    Parameters:
-    x (numpy array): Array containing feature values
-    y_true (numpy array): Array containing true labels
-    feature_labels (list): List of feature labels
-    r_threshold (float): Threshold for correlation. Features with correlation above this threshold are considered highly correlated.
+     Parameters:
+     - x (array-like): The feature matrix with shape (n_samples, n_features).
+     - y_true (array-like): The true class labels with shape (n_samples,).
+     - feature_labels (array-like): The feature labels corresponding to columns from x.
+     - r_threshold (float): Correlation threshold for feature selection. Features with correlation 
+       higher than this threshold will be considered for dropping.
+     - feature_size (list of int): List of sizes for the feature subsets to be selected.
+     - nleast_correlated (int): Number of least correlated features to be included 
+       in the final selection.
     
-    Returns:
-    None. A csv file named 'feature_metrics.csv' is saved in the current directory.
+     Returns:
+     - feature_dict (dict): A dictionary with keys corresponding to the different feature subsets.
+       Each key has two variations:
+         - 'best_{size}': Top features based solely on ANOVA ranks.
+         - 'best_{size}_and_leastcorr': Top features combined with the least correlated features.
     """
-
-    # Select features that are not highly correlated before proceeding with ranking
+    
+    # Calculate correlation matrix
     corr_matrix = np.corrcoef(x.T)
-    corr_matrix = pd.DataFrame(corr_matrix, index=feature_labels, columns=feature_labels)
-    corr_matrix = corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1).astype(bool))
-    correlated_pairs = corr_matrix[corr_matrix > r_threshold].stack().index.tolist()
-    
-    # Select features from high correlated features
-    corr_feature_df = pd.DataFrame(correlated_pairs)
-    high_corr_features = set(np.unique(corr_feature_df[corr_feature_df.columns].values))
-    for feature1, feature2 in correlated_pairs:
-        corr_feature_df = corr_feature_df[corr_feature_df.iloc[:,0] != feature2]
-    
-    selected_high_corr_features = set(corr_feature_df.iloc[:,0].values)
-    drop_features = high_corr_features.difference(selected_high_corr_features)
-    selected_features = set(corr_matrix.index).difference(drop_features)
-    
-    # put them back in feature original order
-    selected_feature_idx = np.zeros(len(feature_labels), dtype=bool)
-    for feature in selected_features:
-        selected_feature_idx[corr_matrix.index == feature] = True
-    selected_features = feature_labels[selected_feature_idx]
-    
-    # Get f-values based on ANOVA
-    f_vals_anova, _ = f_classif(x[:,selected_feature_idx], y_true)
+    corr_df = pd.DataFrame(corr_matrix, index=feature_labels, columns=feature_labels)
 
-    # Get MI based on mutual information
-    mutual_info = mutual_info_classif(x[:, selected_feature_idx], y_true)
+    # Perform ANOVA
+    f_vals_anova, _ = f_classif(x, y_true)
+    anova_ranks = pd.Series(f_vals_anova, index=feature_labels).rank(method='min', ascending=False)
     
-    # Map back to full feature space
-    anova_ranks = np.empty(len(feature_labels), dtype=np.dtype('U100'))
-    sorted_indices = (1/f_vals_anova).argsort()
-    ranks = sorted_indices.argsort() + 1
-    for feature, rank in zip(selected_features, ranks):
-        anova_ranks[corr_matrix.index == feature] = str(rank)
- 
-    # Map back to full feature space
-    mutual_info_ranks = np.empty(len(feature_labels), dtype=np.dtype('U100'))
-    sorted_indices = (1/mutual_info).argsort()
-    ranks = sorted_indices.argsort() + 1
-    for feature, rank in zip(selected_features, ranks):
-        mutual_info_ranks[corr_matrix.index == feature] = str(rank)
+    # Identify highly correlated feature pairs
+    upper_triangle = np.triu(np.ones(corr_df.shape), k=1).astype(bool)
+    high_corr_pairs = corr_df.where(upper_triangle).stack()
+    high_corr_pairs = high_corr_pairs[high_corr_pairs > r_threshold].index.tolist()
+
+    # Determine which feature to drop based on lower ANOVA rank
+    to_drop = set()
+    for feature1, feature2 in high_corr_pairs:
+        if anova_ranks[feature1] > anova_ranks[feature2]:
+            to_drop.add(feature1)
+        else:
+            to_drop.add(feature2)
+    selected_features = [str(f) for f in feature_labels if f not in to_drop]
     
-    # Get metrics dataframe and store
-    feature_metrics = pd.DataFrame(data=[
-                                ['anova_ranks'] + list(anova_ranks),
-                                ['mutual_info_ranks'] + list(mutual_info_ranks)],
-                                columns=['metrics'] + list(feature_labels))
-    return feature_metrics
+    # Use the original ANOVA ranks to sort the selected features
+    selected_anova_ranks = anova_ranks[selected_features]
 
+    # Find the n least correlated features to the top 5 features
+    top_5_features = selected_anova_ranks.nsmallest(5).index.values
+    corr_to_top_5 = corr_df.loc[:, top_5_features].abs().mean(axis=1)
+    least_corr_features = corr_to_top_5.nsmallest(nleast_correlated).index.tolist()
 
-def get_feature_space(feature_ranks, feature_size=[33,66]):
-    """
-    Create feature space from anova and mutual info ranks dataframe.
+    # Create the feature dictionary for the specified feature sizes
+    feature_dict = {}
+    for size in feature_size:
+        top_features = selected_anova_ranks.nsmallest(size).index.tolist()
+        feature_dict[f'best_{str(size)}'] = top_features
+        
+    if nleast_correlated > 0:
+        for size in feature_size:
+            top_features = selected_anova_ranks.nsmallest(size).index.tolist()
+            feature_dict[f'best_{str(size)}_and_leastcorr'] =  top_features + [f for f in least_corr_features if f not in top_features]
 
-    Parameters
-    ----------
-    feature_ranks : pandas df, containing mnetrics
-    feature_size : list, Percent of features to select from ANOVA and MI ranks. Default is [33,66].
-
-
-    Returns
-    -------
-    feature_space : pandas df,
-    dft : pandas df,
-
-    """
-
-    # reformat dataframe to get features
-    dft = dft = feature_ranks.drop('metrics', axis=1)
-    dft = dft.T.reset_index()
-    dft.columns = ['features'] + list(feature_ranks['metrics'])
-    df = feature_ranks.drop('metrics', axis=1)
-    df = df.apply(pd.to_numeric)
-    
-    # get rank columns and set empty ranks(discarded because of high correlation) to max length
-    rank_cols = [col for col in dft.columns if 'ranks' in col]
-    dft.loc[dft[rank_cols[0]] == '', rank_cols]  = str(len(dft))
-    dft[rank_cols] = dft[rank_cols].astype(int)
-    
-    # get index
-    bool_array = np.zeros((len(rank_cols)*len(feature_size)+1, len(df.columns)))
-    max_rank = int(np.nanmax(df.values))
-    
-    # add all non correlated features
-    bool_array[0,:] = dft[rank_cols[0]]<=max_rank
-    cntr = 1
-    for rank_col in rank_cols:
-        for feature_percent in feature_size:   
-            feature_len = int(feature_percent/100*len(feature_ranks.columns))
-            idx = dft.nsmallest(feature_len, columns=rank_col).index.values
-            bool_array[cntr, idx] = 1
-            cntr+=1
-            
-    # merge dfs
-    feature_space = pd.DataFrame(columns=df.columns, data=bool_array)
-    return feature_space
-
+    return feature_dict
 
 
     
