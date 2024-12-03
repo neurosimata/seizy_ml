@@ -46,7 +46,7 @@ class VerifyGui(object):
         self.wait_time = 0.1 # in seconds
         
         # create figure and axis
-        self.fig, self.axs = plt.subplots(data.shape[2], 1, sharex = True, figsize=(8,8))
+        self.fig, self.axs = plt.subplots(data.shape[2], 1, sharex = True, figsize=(12,8))
 
         # remove all axes except left 
         for i in range(self.axs.shape[0]): 
@@ -63,7 +63,7 @@ class VerifyGui(object):
         self.fig.text(0.5, 0.09,'Time Bins (' + str(self.win) + ' Sec.)', ha="center")             # xlabel
         self.fig.text(.02, .5, 'Amp. (V)', ha='center', va='center', rotation='vertical')          # ylabel
         self.fig.text(0.5, 0.04, 
-                      '** Accept/Reject = a/r,      Previous/Next = \u2190/\u2192,      Enter = Save, Esc = close(no Save) **' , # legend
+                      "** Accept/Reject = a/r,      Previous/Next = ←/→,    ctrl+Previous/Next = -10/+10, \n Enter = Save, Esc = close(no Save), Drag cursor (left click) to adjust bounds**" ,
                       ha="center", bbox=dict(boxstyle="square", ec=(1., 1., 1.), fc=(0.9, 0.9, 0.9),))
         self.fig.canvas.callbacks.connect('key_press_event', self.keypress)
         
@@ -156,7 +156,7 @@ class VerifyGui(object):
         
         # get seizure time
         timestr = VerifyGui.get_hours(self.start*self.win)
-        timestr = '#' + str(self.i) + ' - '+ timestr
+        timestr = '#' + str(self.i+1) + ' - '+ timestr
         
         # get boundaries for highlighted region
         if user_start is not None:   
@@ -184,13 +184,23 @@ class VerifyGui(object):
           
     ## ------  Keyboard press ------ ##     
     def keypress(self, event):
-        
+
+        # navigate one event
         if event.key == 'right':
-            self.ind += 1 # add one to class index
+            self.ind += 1
+            self.plot_data() # plot
+        
+        if event.key == 'left':
+            self.ind -= 1
             self.plot_data() # plot
             
-        if event.key == 'left':
-            self.ind -= 1 # subtract one to class index
+        # navigate ten events
+        if event.key == 'ctrl+right':
+            self.ind += 10
+            self.plot_data() # plot
+        
+        if event.key == 'ctrl+left':
+            self.ind -= 10
             self.plot_data() # plot
             
         if event.key == 'a':
@@ -204,9 +214,8 @@ class VerifyGui(object):
                 self.fig.canvas.draw()
                 
             plt.pause(self.wait_time)
-            # plot next event
-            self.ind += 1 # add one to class index
-            self.plot_data() # plot
+            self.ind += 1
+            self.plot_data()
                 
         if event.key == 'r':
             self.facearray[self.i] = 'salmon'
@@ -216,12 +225,12 @@ class VerifyGui(object):
             
             plt.pause(self.wait_time)
             # plot next event
-            self.ind += 1 # add one to class index
-            self.plot_data() # plot
+            self.ind += 1
+            self.plot_data()
             
         if event.key == 'enter': 
             plt.close()
-            self.save_idx() # save file to csv
+            self.save_idx()
             print(self.idx_out)
             print(self.idx_out.shape[0]-np.sum(self.idx_out[:,0] == -1),'Seizures accepted.\n')
             
