@@ -227,7 +227,7 @@ def extractproperties(ctx):
 
 
 @main.command()
-@click.option('--p', type=str, help='preprocess, get_features, parameter_space, train')
+@click.option('--p', type=str, help='compute_features, train_model')
 @click.pass_context
 def train(ctx, p):
     """* Train Models """
@@ -241,16 +241,16 @@ def train(ctx, p):
     
     # imports
     import numpy as np
-    import pandas as pd
     from sklearn.preprocessing import StandardScaler
     from train.train_models import train_and_save_models
     from helper.io import load_data, save_data
     from data_preparation.preprocess import PreProcess
     from helper.get_features import compute_features
-    from train.select_features import feature_selection_and_ranking, get_feature_space
+    from train.select_features import select_features
+    from tqdm import tqdm
     
     # check if user input exists in process types
-    process_type_options = ['preprocess', 'get_features', 'parameter_space', 'train']
+    process_type_options = ['compute_features', 'train_model']
     if p is None:
         process_type = set(process_type_options)
     else:
@@ -262,73 +262,73 @@ def train(ctx, p):
                     fg='yellow', bold=True)
         return
     
-    # get train path and pass to settings
+    # get train path from settings
     train_path = ctx.obj['parent_path']
     
-    # pre-process data (filter, remove extreme outliers)
-    if 'preprocess' in process_type:
-        data = load_data(os.path.join(train_path, 'data.h5'))
+    # pre-process data and compute features
+    if 'compute_features' in process_type:
         
-        # check if data are structured properly
-        if data.shape[2] != len(ctx.obj['channels']):
-            print('Error! Length of channels:', len(ctx.obj['channels']),
-                  'in settings file,', ' does not match train data channels.',
-                  data.shape[2], '.')
-            return
-        if data.shape[1] != int(ctx.obj['fs']*ctx.obj['win']):
-            print('Error! fs*win -ie window size-' , int(ctx.obj['fs']*ctx.obj['win']),
-                  'in settings file',
-                  'does not match train data dimensions.',
-                  data.shape[1], '.')
-            return
+        # get all h5 files with user annotations
+        label_files = [x for x in os.listdir(train_path) if x[-4:] == '.csv']
+        h5_files = [x.replace('.csv', '.h5') for x in label_files]
+        x_all = []
+        y_all =[]
         
-        print('-> Processing Data:')
-        obj = PreProcess("", "", fs=ctx.obj['fs'],)
-        data = obj.filter_clean(data)
-        save_data(os.path.join(train_path, 'data_clean.h5'), data)
-    
-    # extract features
-    if 'get_features' in process_type:
-        if 'data' not in locals():
-            data = load_data(os.path.join(train_path, 'data_clean.h5'))
-        print('-> Extracting Features:')
-        features, feature_labels = compute_features(data, ctx.obj['features'],
-                         ctx.obj['channels'])
-        features = StandardScaler().fit_transform(features)
-        np.savetxt(os.path.join(train_path, 'feature_labels.csv'), feature_labels, fmt="%s")
-        save_data(os.path.join(train_path, 'features.h5'), features)
-    
-    # create csv with best features
-    if 'parameter_space' in process_type:
+        # TODO add file check before loading files
+        for x_path, y_path in tqdm(zip(h5_files, label_files), total=len(h5_files)):
+            print('-> Cleaning and Computing Features:')
+            
+            # load f5 file and check if data are properly structured 
+            x = load_data(os.path.join(train_path, x_path))
+            if x.shape[2] != len(ctx.obj['channels']):
+                print('Error! Length of channels:', len(ctx.obj['channels']),
+                      'in settings file,', ' does not match train data channels.',
+                      x.shape[2], '.')
+                return
+            if x.shape[1] != int(ctx.obj['fs']*ctx.obj['win']):
+                print('Error! fs*win -ie window size-' , int(ctx.obj['fs']*ctx.obj['win']),
+                      'in settings file',
+                      'does not match train data dimensions.',
+                      x.shape[1], '.')
+                return
+            
+            # clean file, compute and normalize features
+            obj = PreProcess("", "", fs=ctx.obj['fs'],)
+            x_clean = obj.filter_clean(x)
+            features, feature_labels = compute_features(x_clean, ctx.obj['features'], ctx.obj['channels'], ctx.obj['fs'])
+            features = StandardScaler().fit_transform(features)
+            
+            # append x and y data
+            x_all.append(features)
+            y_all.append(np.loadtxt(os.path.join(train_path, y_path)))
+
+        # concantenate and save
+        save_data(os.path.join(train_path, 'features.h5'), np.concatenate(x_all, axis=0))
+        save_data(os.path.join(train_path, 'y.h5'), np.concatenate(y_all, axis=0))
+        np.savetxt(os.path.join(train_path, 'feature_labels.txt'), feature_labels, fmt="%s")
+        
+    # select features and train model
+    if 'train_model' in process_type:
+        print('-> Training Model:')
+        
+        # select features
         if 'features' not in locals():
-            feature_labels = np.loadtxt(os.path.join(train_path, 'feature_labels.csv'), dtype=str)
-            features = load_data(os.path.join(train_path, 'features.h5'))
-        y = load_data(os.path.join(train_path, 'y.h5'))
-        print('-> Selecting Features:')
-        feature_ranks = feature_selection_and_ranking(features, y, feature_labels, ctx.obj['feature_select_thresh'])
-        feature_ranks.to_csv(os.path.join(train_path,'feature_ranks.csv'), index=False)
-        feature_space = get_feature_space(feature_ranks, feature_size=[33,66])
-        feature_space.to_csv(os.path.join(train_path,'feature_space.csv'), index=False)
-    
-    # train models
-    if 'train' in process_type:
-        if 'feature_space' not in locals():
+            feature_labels = np.loadtxt(os.path.join(train_path, 'feature_labels.txt'), dtype=str)
             features = load_data(os.path.join(train_path, 'features.h5'))
             y = load_data(os.path.join(train_path, 'y.h5'))
-            feature_space = pd.read_csv(os.path.join(train_path,'feature_space.csv'))
-         
+        
+        selected_features = select_features(features, y, feature_labels, r_threshold=ctx.obj['feature_select_thresh'], 
+                                        feature_size=ctx.obj['feature_size'], 
+                                        nleast_correlated=ctx.obj['nleast_corr'])
+        
+        # train model
         trained_model_path = os.path.join(train_path, ctx.obj['trained_model_dir'])
-        print('-> Training:')
-        train_df = train_and_save_models(trained_model_path, features, y, feature_space)
-        train_df.to_csv(os.path.join(train_path, 'trained_models.csv'), index=False)
+        train_df = train_and_save_models(trained_model_path, features, y, selected_features, feature_labels)
+        train_df.to_csv(os.path.join(trained_model_path, 'trained_models.csv'), index=False)
         
         # find model with best f1 score and save to settings
         idx = train_df['F1'].idxmax()
         model_id = train_df.loc[idx, 'ID']
-        
-        # save model features
-        selected_features = feature_space.columns[feature_space.loc[idx]==1]
-        np.savetxt(os.path.join(train_path, 'selected_features.csv'), selected_features, fmt="%s")
 
         # pass model id and train path to settings
         ctx.obj.update({'model_id': model_id})
