@@ -5,7 +5,7 @@ import os
 import tqdm
 import numpy as np
 import pandas as pd
-from helper.array_helper import find_szr_idx
+from helper.event_match import get_szr_idx
 ### ----------------------------------------------------------------------- ###
 
 def get_seizure_prop(parent_path, verified_predictions_dir, win):
@@ -47,7 +47,7 @@ def get_seizure_prop(parent_path, verified_predictions_dir, win):
         ver_pred = np.loadtxt(file_path, delimiter=',')
 
         # get seizure segments
-        idx_bounds = find_szr_idx(ver_pred, dur=1)
+        idx_bounds = get_szr_idx(ver_pred)
         
         # save to array
         if idx_bounds.shape[0]>0:
