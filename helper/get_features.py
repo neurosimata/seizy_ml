@@ -37,7 +37,7 @@ def compute_features(data, single_channel_functions, channel_names, fs):
         
     for c in range(num_channels):
         x_data = Parallel(n_jobs=n_jobs)(delayed(extract_features_for_segment)(segment, param_list) for segment in data[:,:,c])
-        features_list.extend(x_data)
+        features_list.append(np.array(x_data))
         feature_labels.extend([f"{func_name}-{channel_names[c]}" for func_name in single_channel_functions])
 
     features_array = np.column_stack(features_list)
