@@ -151,18 +151,13 @@ def predict(ctx):
                     fg='yellow', bold=True)
         return
     
-    import numpy as np
     from data_preparation.get_predictions import ModelPredict
     
-    # get model path and features
-    model_path = os.path.join(ctx.obj['train_path'], ctx.obj['trained_model_dir'], ctx.obj['model_id'])
-    selected_features = np.loadtxt(os.path.join(ctx.obj['train_path'], 'selected_features.csv'), dtype=str)
-    
     # get paths and model predictions
+    model_path = os.path.join(ctx.obj['train_path'], ctx.obj['trained_model_dir'], ctx.obj['model_id'])
     load_path = os.path.join(ctx.obj['parent_path'], ctx.obj['processed_dir'])
     save_path = os.path.join(ctx.obj['parent_path'], ctx.obj['model_predictions_dir'])
-    model_obj = ModelPredict(model_path, load_path, save_path, selected_features,
-                             channels=ctx.obj['channels'], win=ctx.obj['win'], fs=ctx.obj['fs'],)
+    model_obj = ModelPredict(model_path, load_path, save_path, channels=ctx.obj['channels'], win=ctx.obj['win'], fs=ctx.obj['fs'],)
     model_obj.predict()
     ctx.obj.update({'predicted_check':True})
     
