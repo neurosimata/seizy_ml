@@ -7,7 +7,7 @@ import tables
 from pick import pick
 import numpy as np
 # User Defined
-from helper.array_helper import find_szr_idx
+from helper.event_match import get_szr_idx
 ### ------------------------------------------- ###
 
 
@@ -127,7 +127,7 @@ class UserVerify:
         # Get predictions
         pred_path = os.path.join(self.model_predictions_path, file_id)
         bin_pred = np.loadtxt(pred_path, delimiter=',', skiprows=0)
-        idx_bounds = find_szr_idx(bin_pred, dur=1)
+        idx_bounds = get_szr_idx(bin_pred)
         
         # load raw data for visualization
         data_path = os.path.join(self.processed_path, file_id.replace('.csv','.h5'))
