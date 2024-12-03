@@ -8,7 +8,7 @@ import numpy as np
 from sklearn.preprocessing import StandardScaler
 from joblib import load
 from helper.io import load_data
-from helper.array_helper import find_szr_idx, merge_close
+from helper.event_match import get_szr_idx, clean_predictions
 from helper.get_features import compute_selected_features
 ### ------------------------------------------------------------------------###
 
@@ -49,7 +49,7 @@ class ModelPredict:
     """
 
     def __init__(self, model_path: str, load_path: str, save_path: str, 
-                 selected_features: list, channels: list, win: int, fs: float):
+                  channels: list, win: int, fs: float):
         """
         Initializes the ModelPredict class.
 
@@ -61,8 +61,6 @@ class ModelPredict:
             The path to the directory containing the input data.
         save_path : str
             The path to the directory where the output data will be saved.
-        selected_features : list
-            A list of selected features to be used in the model.
         channels : list
             A list of channel names.
         win : int
@@ -80,13 +78,13 @@ class ModelPredict:
         self.channels = channels
         self.win = win
         self.fs = fs    
-        self.min_seizure_duration = 10 # minimum seizure duration
-        self.erode = int(self.min_seizure_duration/self.win)-1
-        self.dilation = 5 # in window bins
+        # self.min_seizure_duration = 10 # minimum seizure duration
+        # self.erode = int(self.min_seizure_duration/self.win)-1
+        # self.dilation = 5 # in window bins
         
         # Load the trained model
-        self.selected_features = selected_features
         self.model = load(model_path +'.joblib')
+        self.selected_features = self.model.feature_labels
         print('Model loaded:', self.model)
 
     def compute_metrics(self, file_id, y_pred, bounds_pred):
@@ -176,18 +174,15 @@ class ModelPredict:
         data = load_data(os.path.join(self.load_path, file_id))
         
         # Eextract features and normalize
-        features, _ = compute_selected_features(data, self.selected_features, self.channels)
+        features, _ = compute_selected_features(data, self.selected_features, self.channels, self.fs)
         features = StandardScaler().fit_transform(features)
         
         # get predictions
         y_pred = self.model.predict(features)
-        bounds_pred = find_szr_idx(y_pred, dur=self.erode)
+        clean_pred = clean_predictions(y_pred, operation='mdt')
+        bounds_pred = get_szr_idx(clean_pred)
         
-        # if seizures are detected, merge close segments
-        if bounds_pred.shape[0] > 0:
-            bounds_pred = merge_close(bounds_pred, merge_margin=self.dilation)
-            
-        return y_pred, bounds_pred 
+        return clean_pred, bounds_pred 
 
             
     def save_idx(file_path, y_pred, bounds_pred):
