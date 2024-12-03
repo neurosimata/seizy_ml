@@ -28,6 +28,12 @@ feature_size:
     - 10
     - 15
 nleast_corr: 5
+post_processing_method: dual_threshold
+rolling_window: 6
+event_threshold: .5
+boundary_threshold: .2
+dilation: 2
+erosion: 1
 model_id: ""
 model_predictions_dir: model_predictions
 parent_path: ""

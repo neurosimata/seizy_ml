@@ -17,39 +17,11 @@ class ModelPredict:
     """
     Class for batch seizure prediction.
 
-    Attributes
-    ----------
-    load_path : str
-        The path to the directory containing the input data.
-    save_path : str
-        The path to the directory where the output data will be saved.
-    channels : list
-        A list of channel names.
-    win : int
-        The window size in seconds.
-    fs : float
-        The sampling frequency in Hz.
-    min_seizure_duration : int
-        The minimum duration of a seizure in seconds.
-    erode : int
-        The number of windows to erode from the start and end of a seizure.
-    dilation : int
-        The number of windows to dilate a seizure.
-
-    Methods
-    -------
-    __init__(self, model_path: str, load_path: str, save_path: str, selected_features: list, channels: list, win: int, fs: float)
-        Initializes the ModelPredict class.
-    predict(self)
-        Runs batch predictions.
-    get_feature_pred(self, file_id)
-        Gets predictions for a given file.
-    save_idx(file_path, y_pred, bounds_pred)
-        Saves user predictions to a CSV file as binary.
     """
 
-    def __init__(self, model_path: str, load_path: str, save_path: str, 
-                  channels: list, win: int, fs: float):
+    def __init__(self, model_path, load_path, save_path, channels, win, fs,
+                   post_processing_method, dilation, erosion,
+                  event_threshold, boundary_threshold, rolling_window):
         """
         Initializes the ModelPredict class.
 
@@ -77,15 +49,20 @@ class ModelPredict:
         self.save_path = save_path
         self.channels = channels
         self.win = win
-        self.fs = fs    
-        # self.min_seizure_duration = 10 # minimum seizure duration
-        # self.erode = int(self.min_seizure_duration/self.win)-1
-        # self.dilation = 5 # in window bins
+        self.fs = fs
         
         # Load the trained model
         self.model = load(model_path +'.joblib')
         self.selected_features = self.model.feature_labels
         print('Model loaded:', self.model)
+        
+        # post-processing parameters
+        self.operation = post_processing_method
+        self.dilation = dilation
+        self.erosion = erosion
+        self.rolling_window = rolling_window
+        self.t_high = event_threshold
+        self.t_low = boundary_threshold
 
     def compute_metrics(self, file_id, y_pred, bounds_pred):
         """
@@ -177,9 +154,12 @@ class ModelPredict:
         features, _ = compute_selected_features(data, self.selected_features, self.channels, self.fs)
         features = StandardScaler().fit_transform(features)
         
-        # get predictions
+        # get clean predictions and event boundares
         y_pred = self.model.predict(features)
-        clean_pred = clean_predictions(y_pred, operation='mdt')
+        clean_pred = clean_predictions(y_pred, operation=self.operation, 
+                                       rolling_window=self.rolling_window,
+                                       dilation=self.dilation, erosion=self.erosion,
+                                       t_high=self.t_high, t_low=self.t_low)
         bounds_pred = get_szr_idx(clean_pred)
         
         return clean_pred, bounds_pred 

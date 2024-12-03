@@ -74,22 +74,22 @@ def match_szrs_idx(bounds_true, y_pred):
             idx[i] = 1
     return idx.astype(bool)
 
-def dual_threshold(raw_pred, T_high=.5, T_low=.2, win_size=6):
+def dual_threshold(raw_pred, t_high=.5, t_low=.2, win_size=6):
     """
     Apply hysteresis thresholding to detect events in a signal.
 
     Parameters:
     raw_pred (np.array): Raw model predictions (binary)
-    T_high (float): The high threshold for triggering an event
-    T_low (float): The low threshold for ending an event
+    t_high (float): The high threshold for triggering an event
+    t_low (float): The low threshold for ending an event
 
     Returns:
     np.array: Binary event vector after hysteresis thresholding
     """
     
     mean_pred = np.convolve(raw_pred, np.ones(win_size)/win_size, mode='same')
-    seeds = mean_pred >= T_high
-    mask = mean_pred > T_low
+    seeds = mean_pred >= t_high
+    mask = mean_pred > t_low
     hysteresis_output = ndimage.binary_propagation(seeds, mask=mask)
     return hysteresis_output.astype(int)
 
@@ -130,7 +130,8 @@ def erosion_dilation(vector, dilation=0, erosion=0):
     operation2 = ndimage.binary_closing(operation1, structure=np.ones(dilation+1)).astype(int)
     return operation2[3:-3]
 
-def clean_predictions(raw_pred, operation='mdt'):
+def clean_predictions(raw_pred, operation='dual_threshold', dilation=None, erosion=None,
+                      rolling_window=None, t_high=None, t_low=None):
     """
     Higher level method to clean predictions called by CLI
 
@@ -144,11 +145,11 @@ def clean_predictions(raw_pred, operation='mdt'):
     clean_pred :  np.array: Clean model predictions
     """
     if operation == 'dilation_erosion':
-        clean_pred = dilation_erosion(vector, dilation=2, erosion=1)
+        clean_pred = dilation_erosion(raw_pred, dilation=dilation, erosion=erosion)
     elif operation == 'erosion_dilation':
-        clean_pred = dilation_erosion(vector, erosion=1, dilation=2)
-    elif operation == 'mdt':
-        clean_pred = dual_threshold(raw_pred, win_size=6, T_high=.5, T_low=.2,)
+        clean_pred = erosion_dilation(raw_pred, erosion=erosion, dilation=dilation)
+    elif operation == 'dual_threshold':
+        clean_pred = dual_threshold(raw_pred, win_size=rolling_window, t_high=t_high, t_low=t_low,)
     else:
         raise(f'Post-proccessing method {operation} was not found.')
     return clean_pred
