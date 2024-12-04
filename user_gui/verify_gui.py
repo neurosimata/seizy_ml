@@ -75,7 +75,6 @@ class VerifyGui(object):
         # span selector
         _ = SpanSelector(self.axs[0], self.onselect, 'horizontal', useblit=True,
             rectprops=dict(alpha=0.5, facecolor='tab:blue'))
-        
         plt.show()
 
     
@@ -222,16 +221,15 @@ class VerifyGui(object):
             self.plot_data() # plot
             self.idx_out[self.i,:] = -1  
             self.fig.canvas.draw()
-            
             plt.pause(self.wait_time)
             # plot next event
             self.ind += 1
             self.plot_data()
-            
+        
+        # TODO Add number of events not verified
         if event.key == 'enter': 
             plt.close()
             self.save_idx()
-            print(self.idx_out)
             print(self.idx_out.shape[0]-np.sum(self.idx_out[:,0] == -1),'Seizures accepted.\n')
             
         if event.key == 'escape': 
