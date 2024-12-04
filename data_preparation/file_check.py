@@ -71,7 +71,7 @@ def check_main(parent_path, data_dir, processed_dir, model_predictions_dir):
             processed_check = False
             
     if processed_check and model_predictions_check:
-        model_predictions = {x.replace('.csv', '') for x in os.listdir(model_predictions_path)}   
+        model_predictions = {x.replace('.csv', '') for x in os.listdir(model_predictions_path) if x[-4:] == '.csv'}   
         if processed != model_predictions:
             model_predictions_check = False
         
