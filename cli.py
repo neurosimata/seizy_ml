@@ -85,7 +85,7 @@ def setpath(ctx, path):
             ctx.obj.update({'processed_check':True})
     if processed_check and model_predictions_check:
         ctx.obj.update({'predicted_check':True})
-        
+    
     with open(settings_path, 'w') as file:
         yaml.dump(ctx.obj, file) 
     click.secho(f"\n -> Path was set to:'{path}'.\n", fg='green', bold=True)
@@ -210,7 +210,7 @@ def extractproperties(ctx):
     """6: Get seizure properties"""
     
     ver_path = os.path.join(ctx.obj['parent_path'], ctx.obj['verified_predictions_dir'])
-    if  os.path.exists(ver_path):
+    if os.path.exists(ver_path):
         filelist = list(filter(lambda k: '.csv' in k, os.listdir(ver_path)))
 
     if not filelist:
@@ -223,6 +223,33 @@ def extractproperties(ctx):
     _, save_path = get_seizure_prop(ctx.obj['parent_path'], ctx.obj['verified_predictions_dir'], ctx.obj['win'])
     click.secho(f"\n -> Properies were saved in '{save_path}'.\n", fg='green', bold=True)
 
+@main.command()
+@click.pass_context
+def featurecontribution(ctx):
+    """7: Plot feature contibutions"""
+    
+    # check if model was trained
+    if not ctx.obj['model_id']:
+        click.secho("No model was found. Please train a model.",
+                    fg='yellow', bold=True)
+    
+    from joblib import load
+    import numpy as np
+    import matplotlib.pyplot as plt
+    model_path = os.path.join(ctx.obj['train_path'], ctx.obj['trained_model_dir'], ctx.obj['model_id']+'.joblib')
+    model = load(model_path)
+    importances = np.abs(model.theta_[0] - model.theta_[1]) / (np.sqrt(model.var_[0]) + np.sqrt(model.var_[1]))
+    importances = importances/np.sum(importances)
+    plt.figure(figsize=(5,3))
+    ax = plt.axes()
+    idx = np.argsort(importances)
+    ax.barh(np.array(model.feature_labels)[idx], importances[idx], facecolor='#66bd7d', edgecolor='#757575')
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+    ax.set_xlabel('Feature Separation Score')
+    ax.set_ylabel('Features')
+    plt.tight_layout()
+    plt.show()
 
 @main.command()
 @click.option('--p', type=str, help='compute_features, train_model')
@@ -336,7 +363,7 @@ def train(ctx, p):
     # save settings
     with open(settings_path, 'w') as file:
         yaml.dump(ctx.obj, file)
-    
+
 if __name__ == '__main__':
     
     # define settings path
