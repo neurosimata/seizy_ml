@@ -34,7 +34,7 @@ def get_feature_indices(selected_features, all_features):
 
     return np.array(indices)
 
-def grid_train(model_path, model_name,  x, y, selected_features, feature_labels):
+def grid_train(model_path, model_name, x, y, selected_features, feature_labels):
     """
     Perform hyperparameter tuning for a specific machine learning model on various feature sets.
     Save the best models and return a DataFrame summarizing the tuning results.
@@ -64,6 +64,7 @@ def grid_train(model_path, model_name,  x, y, selected_features, feature_labels)
     # iterate through feature sets
     data_list = []
     for feature_set in tqdm(selected_features, total=len(selected_features)):
+        
         # perform grid search for particular feature set
         search = GridSearchCV(estimator=models[model_name],
                               param_grid=hyper_params[model_name],
@@ -94,7 +95,6 @@ def grid_train(model_path, model_name,  x, y, selected_features, feature_labels)
         
         df = pd.DataFrame(data=data_list, columns=['ID', 'HYPERPARAMETERS']+ list(metrics.keys()))
     return df
-
 
 def train_and_save_models(trained_model_path, x, y, selected_features, feature_labels):
     """
