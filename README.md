@@ -97,7 +97,7 @@ python cli.py featurecontribution
         
 ### How To Use
 
-** **Note:** ** A model should be [trained](#model-training) before using the app for seizure detection
+** **Note:** ** A model must be [trained](#model-training) ☝️ before using the app for seizure detection.
 
 1) **Launch Conda Shell Prompt, navigate to seizy_ml directory and activate the virtual environment.**
 ```
