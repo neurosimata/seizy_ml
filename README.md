@@ -49,7 +49,7 @@ To edit the `config.yaml` use any text editor such as notepad:
 -         **channels** : List containing the names of LFP/EEG channels, e.g. ["hippocampus", "frontal cortex"]
 - All other settings can be left at default, given that the data were prepared in the recommended format (.h5 files with shape **[Nsegments, 500 (1 segment), channels]**).
 - For data conversion check the accompanying app [seizy_convert](https://github.com/neurosimata/seizy_convert) or the [h5_conversion script](/examples/to_h5.py) for more help.
-- An explanation of all other settings can be found [here](/docs/configurations.md).
+- An explanation of all other settings can be found [here](/docs/configuration.md).
 ---
         
 ### Model Training
