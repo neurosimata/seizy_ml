@@ -2,6 +2,8 @@
 :snake: **SeizyML** uses interpretable machine learning models to detect :detective: seizures from EEG recordings.
 After the seizures are detected, they can be manually verified with a user-friendly GUI.
 
+📖 To reference **SeizyML** please use the following (publication)[https://www.researchsquare.com/article/rs-4361048/v1] (To be updated).
+
 ---
 ## Summary
 - [Installation](#installation)
@@ -109,8 +111,8 @@ conda activate seizyml
 ```
 python cli.py setpath 'path'
 ```
-- This is the parent path where the directory ('data_dir') with h5 data resides [configuration settings](/docs/configuration.md).
-- All subsequent folders and model predictions will reside here.
+- This is the parent path where the child folder with h5 data resides and where all subsequent folders will be created. Check [configuration settings](/docs/configuration.md) for more information.
+- The h5 data should be added in a child folder called `data`.
 
 3) **Run file check.**
 ```
