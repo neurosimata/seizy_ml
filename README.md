@@ -41,36 +41,15 @@ If this works it should display the SeizyMl cli App.
 
 ### App Configuration
 
-All settings are stored in the `config.yaml` file. This file will be created in the SeizyMl folder from a template(temp_config.yaml) after you use the setpath command for the first time.
-⚠️ The temp_config.yaml file should not be edited by the user ⚠️
+All settings are stored in the `config.yaml` file. 
+- This file will be created in the **SeizyML** folder from a template file (`temp_config.yaml`) after you use the setpath command for the first time. ⚠️ The `temp_config.yaml` file should not be edited by the user. 
 
-To edit the config.yaml use any text editor such as notepad.
-#### -> To be provided by user in the `config.yaml` file.
-
-- **channels** : List containing the names of LFP/EEG channels, e.g. ["hippocampus", "frontal cortex"]
-
-- **data_dir** : child directory name where .h5 files are present, **default is "data"**
-- **win** : window size in seconds, **default and recommended is 5 seconds**
-- **fs** : sampling rate of .h5 files, **default and recommended is 100 Hz**
-
-:exclamation:The original LFP/EEG data have to be converted to .h5 files with the following 3D shape **[nrows, 500 (win*fs), channels].**
-Check use the accompanying app [seizy_convert](https://github.com/neurosimata/seizy_convert) or check out the [h5_conversion script](/examples/to_h5.py) for more help.
-
----
-
-#### -> Edited during app execution directly from 
-- **parent_path** : path to parent directory, e.g. "C:\\Users\\...\\parent directory". This is set during app usage with the command `setpath` See sections below on [how to use](#how-to-use).
-- **processed_dir** : child directory name with h5 preprocessed data, default is "processed"
-- **model_predictions_dir** : child directory name with model predictions are present (.csv), default is "model_predictions"
-- **verified_predictions_dir** : child directory name where user verified predictions are present (.csv), default is "verified_predictions"
-
----
-## Path organization
-
-<img src="docs/configuration_paths.png" width="500">
-
----
-
+To edit the `config.yaml` use any text editor such as notepad:
+- The only setting that requires editing before training a model and using the app is the `channels` field.
+-         **channels** : List containing the names of LFP/EEG channels, e.g. ["hippocampus", "frontal cortex"]
+- All other settings can be left at default, given that the data were prepared in the recommended format (.h5 files with shape **[Nsegments, 500 (1 segment), channels]**).
+- For data conversion check the accompanying app [seizy_convert](https://github.com/neurosimata/seizy_convert) or the [h5_conversion script](/examples/to_h5.py) for more help.
+- An explanation of all other settings can be found [here](/docs/configurations.md).
 ---
         
 ### Model Training
@@ -87,7 +66,7 @@ conda activate seizyml
 python cli.py setpath 'path'
 ```
 - This is the folder path where the training data in .h5 format along with the corresponding training labels in .csv format are stored.
-- The training data consist of each recording in .h5 format **[Nsegments, 500 (win*fs), Nchannels].** Where a segment is 500 (win*fs).
+- The training data consist of each recording in .h5 format **[Nsegments, 1 segment, Nchannels].** Where a segment is 500 (win*fs).
 - The training labels consist of a corresponding .csv file containing the  ground truth labels (1 for seizure, 0 for non seizure) with length **[Nsegments].**
 - Training data and labels for each recording need to have a matching name.
 
@@ -130,7 +109,7 @@ conda activate seizyml
 ```
 python cli.py setpath 'path'
 ```
-- This is the parent path where the directory ('data_dir') with h5 data resides [configuration settings](configuration.md).
+- This is the parent path where the directory ('data_dir') with h5 data resides [configuration settings](/docs/configuration.md).
 - All subsequent folders and model predictions will reside here.
 
 3) **Run file check.**
