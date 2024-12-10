@@ -2,7 +2,7 @@
 :snake: **SeizyML** uses interpretable machine learning models to detect :detective: seizures from EEG recordings.
 After the seizures are detected, they can be manually verified with a user-friendly GUI.
 
-📖 To reference **SeizyML** please use the following (publication)[https://www.researchsquare.com/article/rs-4361048/v1] (To be updated).
+📖 To reference **SeizyML** please use the following [publication](https://www.researchsquare.com/article/rs-4361048/v1) (To be updated).
 
 ---
 ## Summary
