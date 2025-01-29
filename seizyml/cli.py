@@ -75,7 +75,7 @@ def setpath(ctx, path):
     ctx.obj.update({'predicted_check':False})
     
     # run check for processed and model predictions
-    from data_preparation.file_check import check_main
+    from seizyml.data_preparation.file_check import check_main
     processed_check, model_predictions_check = check_main(ctx.obj['parent_path'], 
                                                           ctx.obj['data_dir'], 
                                                           ctx.obj['processed_dir'], 
@@ -103,7 +103,7 @@ def filecheck(ctx):
         return
     
     ### code to check for files ###
-    from data_preparation.file_check import check_h5_files
+    from seizyml.data_preparation.file_check import check_h5_files
     error = check_h5_files(os.path.join(ctx.obj['parent_path'], ctx.obj['data_dir']),
                            win=ctx.obj['win'], fs=ctx.obj['fs'], 
                            channels=len(ctx.obj['channels']))
@@ -129,7 +129,7 @@ def preprocess(ctx):
                     fg='yellow', bold=True)
         return
     
-    from data_preparation.preprocess import PreProcess
+    from seizyml.data_preparation.preprocess import PreProcess
     # get paths, preprocess and save data
     load_path = os.path.join(ctx.obj['parent_path'], ctx.obj['data_dir'])
     save_path = os.path.join(ctx.obj['parent_path'], ctx.obj['processed_dir'])
@@ -151,7 +151,7 @@ def predict(ctx):
                     fg='yellow', bold=True)
         return
     
-    from data_preparation.get_predictions import ModelPredict
+    from seizyml.data_preparation.get_predictions import ModelPredict
     
     # get paths and model predictions
     model_path = os.path.join(ctx.obj['train_path'], ctx.obj['trained_model_dir'], ctx.obj['model_id'])
@@ -178,7 +178,7 @@ def verify(ctx):
                     fg='yellow', bold=True)
         return
     
-    from data_preparation.file_check import check_verified
+    from seizyml.data_preparation.file_check import check_verified
     out = check_verified(folder=ctx.obj['parent_path'],
                      data_dir=ctx.obj['processed_dir'],
                      csv_dir=ctx.obj['model_predictions_dir'])
@@ -188,7 +188,7 @@ def verify(ctx):
         return
     
     # Create instance for UserVerify class
-    from user_gui.user_verify import UserVerify
+    from seizyml.user_gui.user_verify import UserVerify
     obj = UserVerify(ctx.obj['parent_path'],
                      ctx.obj['processed_dir'], 
                      ctx.obj['model_predictions_dir'],
@@ -200,7 +200,7 @@ def verify(ctx):
     if idx_bounds.shape[0] == 0:
         obj.save_emptyidx(data.shape[0], file_id)     
     else:
-        from user_gui.verify_gui import VerifyGui
+        from seizyml.user_gui.verify_gui import VerifyGui
         VerifyGui(ctx.obj, file_id, data, idx_bounds)
         
         
@@ -219,7 +219,7 @@ def extractproperties(ctx):
         return
     
     # get properies and save
-    from helper.get_seizure_properties import get_seizure_prop
+    from seizyml.helper.get_seizure_properties import get_seizure_prop
     _, save_path = get_seizure_prop(ctx.obj['parent_path'], ctx.obj['verified_predictions_dir'], ctx.obj['win'])
     click.secho(f"\n -> Properies were saved in '{save_path}'.\n", fg='green', bold=True)
 
@@ -267,11 +267,11 @@ def train(ctx, p):
     # imports
     import numpy as np
     from sklearn.preprocessing import StandardScaler
-    from train.train_models import train_and_save_models
-    from helper.io import load_data, save_data
-    from data_preparation.preprocess import PreProcess
-    from helper.get_features import compute_features
-    from train.select_features import select_features
+    from seizyml.train.train_models import train_and_save_models
+    from seizyml.helper.io import load_data, save_data
+    from seizyml.data_preparation.preprocess import PreProcess
+    from seizyml.helper.get_features import compute_features
+    from seizyml.train.select_features import select_features
     from tqdm import tqdm
     
     # check if user input exists in process types
@@ -363,6 +363,31 @@ def train(ctx, p):
     # save settings
     with open(settings_path, 'w') as file:
         yaml.dump(ctx.obj, file)
+
+def cli_entry_point():
+    """Entry point for the `seizyml` command when installed via pip."""
+    global settings_path
+    settings_path = os.path.join('seizyml', 'config.yaml')
+    temp_settings_path = os.path.join('seizyml', 'temp_config.yaml')
+
+    if not os.path.isfile(settings_path):
+        import shutil
+        shutil.copy(temp_settings_path, settings_path)
+
+    else:
+        # Check if keys match; if not, reset the settings file
+        with open(temp_settings_path, "r") as file:
+            temp_settings = yaml.safe_load(file)
+        with open(settings_path, "r") as file:
+            settings = yaml.safe_load(file)
+
+        if settings.keys() != temp_settings.keys():
+            import shutil
+            shutil.copy(temp_settings_path, settings_path)
+        
+    # init cli
+    main(obj={})
+    
 
 if __name__ == '__main__':
     

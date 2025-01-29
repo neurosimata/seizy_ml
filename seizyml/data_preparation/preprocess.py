@@ -4,7 +4,7 @@
 import os
 import numpy as np
 from tqdm import tqdm
-from helper.io import load_data, save_data
+from seizyml.helper.io import load_data, save_data
 from scipy.signal import butter, zpk2sos, sosfiltfilt
 ### ------------------------------------------------------------------------###
 

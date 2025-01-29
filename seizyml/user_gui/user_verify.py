@@ -7,7 +7,7 @@ import tables
 from pick import pick
 import numpy as np
 # User Defined
-from helper.event_match import get_szr_idx
+from seizyml.helper.event_match import get_szr_idx
 ### ------------------------------------------- ###
 
 

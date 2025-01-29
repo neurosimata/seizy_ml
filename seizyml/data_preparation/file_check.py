@@ -3,7 +3,7 @@
 ### -------------------------------- IMPORTS ------------------------------ ###
 import os
 from tqdm import tqdm
-from helper.io import load_data
+from seizyml.helper.io import load_data
 ### ------------------------------------------------------------------------###
 
 def check_main(parent_path, data_dir, processed_dir, model_predictions_dir):

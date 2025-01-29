@@ -5,7 +5,7 @@ import os
 import tqdm
 import numpy as np
 import pandas as pd
-from helper.event_match import get_szr_idx
+from seizyml.helper.event_match import get_szr_idx
 ### ----------------------------------------------------------------------- ###
 
 def get_seizure_prop(parent_path, verified_predictions_dir, win):

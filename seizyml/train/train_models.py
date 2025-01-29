@@ -10,7 +10,7 @@ import multiprocessing
 from sklearn.model_selection import StratifiedKFold
 from sklearn.model_selection import GridSearchCV
 from joblib import dump
-from train.model_settings import models, hyper_params, metrics, fit_metric
+from seizyml.train.model_settings import models, hyper_params, metrics, fit_metric
 njobs = int(multiprocessing.cpu_count()*.8)
 ### --------------------------------------------------------------------- ###
 
