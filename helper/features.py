@@ -183,6 +183,8 @@ def hjorth_mobility(signal, **kwargs):
     mobility : float
         Hjorth Mobility of the signal.
     """
+    if np.var(signal) == 0:
+        return 0
     diff_signal = np.diff(signal)
     return np.sqrt(np.var(diff_signal) / np.var(signal))
 
@@ -201,6 +203,8 @@ def hjorth_complexity(signal, **kwargs):
     complexity : float
         Hjorth Complexity of the signal.
     """
+    if np.var(signal) == 0:
+        return 0
     diff_signal = np.diff(signal)
     diff_diff_signal = np.diff(diff_signal)
     mobility = np.sqrt(np.var(diff_signal) / np.var(signal))
