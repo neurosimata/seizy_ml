@@ -320,16 +320,18 @@ def train(ctx, p):
             # clean file, compute and normalize features
             obj = PreProcess("", "", fs=ctx.obj['fs'],)
             x_clean = obj.filter_clean(x)
-            features, feature_labels = compute_features(x_clean, ctx.obj['features'], ctx.obj['channels'], ctx.obj['fs'])
-            features = StandardScaler().fit_transform(features)
+            features_temp, feature_labels = compute_features(x_clean, ctx.obj['features'], ctx.obj['channels'], ctx.obj['fs'])
+            features_temp = StandardScaler().fit_transform(features_temp)
             
             # append x and y data
-            x_all.append(features)
+            x_all.append(features_temp)
             y_all.append(np.loadtxt(os.path.join(train_path, y_path)))
 
         # concantenate and save
-        save_data(os.path.join(train_path, 'features.h5'), np.concatenate(x_all, axis=0))
-        save_data(os.path.join(train_path, 'y.h5'), np.concatenate(y_all, axis=0))
+        features = np.concatenate(x_all, axis=0)
+        y = np.concatenate(y_all, axis=0)
+        save_data(os.path.join(train_path, 'features.h5'), features)
+        save_data(os.path.join(train_path, 'y.h5'), y)
         np.savetxt(os.path.join(train_path, 'feature_labels.txt'), feature_labels, fmt="%s")
         
     # select features and train model
