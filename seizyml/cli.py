@@ -392,30 +392,7 @@ def cli_entry_point():
     
 
 if __name__ == '__main__':
-    
-    # define settings path
-    temp_settings_path = 'temp_config.yaml'
-    settings_path = 'config.yaml'
-    
-    # check if settings file exist and if all the fields are present
-    if not os.path.isfile(settings_path):
-        import shutil
-        shutil.copy(temp_settings_path, settings_path)
-        
-    else:
-        # check if keys match otherwise load original settings
-        with open(temp_settings_path, 'r') as file:
-            temp_settings = yaml.safe_load(file)      
-        with open(settings_path, 'r') as file:
-            settings = yaml.safe_load(file) 
-    
-        if settings.keys() != temp_settings.keys():
-            import shutil
-            shutil.copy(temp_settings_path, settings_path)
-        
-    # init cli
-    main(obj={})
-    
+    cli_entry_point()
     
     
     
