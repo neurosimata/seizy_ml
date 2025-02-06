@@ -1,7 +1,7 @@
 ## Configuration settings
 
 All settings can be edited from the `config.yaml` file.
--> The `config.yaml` is created when the path is first set in **SeizyML** set from [temp_config.yaml](/temp_config.yaml).
+-> The `config.yaml` is created when the path is first set in **SeizyML** set from [temp_config.yaml](../seizyml/temp_config.yaml).
 
 **1) Basic data parameters**
 - channels : List containing the names of LFP/EEG channels, e.g. ["hippocampus", "frontal cortex"].
