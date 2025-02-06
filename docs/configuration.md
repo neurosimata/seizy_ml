@@ -20,8 +20,10 @@ All settings can be edited from the `config.yaml` file.
 - model_predictions_dir : Child directory name with model predictions are present (.csv), default is **"model_predictions"**.
 - verified_predictions_dir : Child directory name where user verified predictions are present (.csv), default is **"verified_predictions"**.
 - trained_model_dir : Child directory from train_path where trained models are stored, default is **"models"**.
-
-<img src="configuration_paths.png" width="500">
+  
+<p align="center">
+        <img src="configuration_paths.png" width="500">
+</p>
 
 **3) Feature selection parameters**
 - features : List containing features to be used for feature selection.
