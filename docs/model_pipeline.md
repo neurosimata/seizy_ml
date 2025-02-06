@@ -2,7 +2,9 @@
 
 SeizyML is designed for accurate detection of seizure events from EEG data using a combination of machine learning and manual verification. The pipeline consists of several key stages that process raw data, train the model, and refine predictions for reliable results.
 
-<center><img src="model_pipeline.png" width="500"></center>
+<p align="center">
+<center><img src="model_pipeline.png" width="600"></center>
+</p>
 
 ---
 
