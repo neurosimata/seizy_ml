@@ -5,7 +5,8 @@ All settings can be edited from the `config.yaml` file.
 
 **1) Basic data parameters**
 - channels : List containing the names of LFP/EEG channels, e.g. ["hippocampus", "frontal cortex"].
-- win : Window size in seconds, **default and recommended is 5 seconds**.
+- win : Window size for processing and predictions in seconds, **default and recommended is 5 seconds**.
+- gui_win: Window size for verification, **default and recommended is 1 second**.
 - fs : Sampling rate of .h5 files, **default and recommended is 100 Hz**.
 
 **2) Paths**
