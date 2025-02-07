@@ -44,3 +44,4 @@ trained_model_dir: models
 processed_dir: processed
 verified_predictions_dir: verified_predictions
 win: 5
+gui_win: 1

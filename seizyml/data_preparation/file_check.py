@@ -168,7 +168,43 @@ def check_h5_files(path, win, fs, channels=2):
     return error
             
 
+def train_file_check(train_path, h5_files, label_files, win, fs, channels):
+    """
+    Check the existence and structure of H5 and label CSV files.
 
+    Parameters
+    ----------
+    train_path : str
+        Path to the directory containing training files.
+    h5_files : list
+        List of H5 file names.
+    label_files : list
+        List of corresponding CSV label file names.
+    win : int or float
+        The window size in seconds.
+    fs : int or float
+        The sampling frequency in Hz of the data.
+    channels : int, optional
+        The expected number of channels in the H5 files. The default is 2.
+
+    Raises
+    ------
+    ValueError
+        If any file is missing or improperly structured.
+    """
+    for x_path, y_path in zip(h5_files, label_files):
+        x_full_path = os.path.join(train_path, x_path)
+        y_full_path = os.path.join(train_path, y_path)
+
+        if not os.path.exists(x_full_path) or not os.path.exists(y_full_path):
+            raise ValueError(f'Missing file: {x_path if not os.path.exists(x_full_path) else y_path}')
+
+        x = load_data(x_full_path)
+        if x.shape[2] != len(channels):
+            raise ValueError(f'Channel mismatch: Expected {len(channels)} channels, found {x.shape[2]} in {x_path}')
+
+        if x.shape[1] != int(fs * win):
+            raise ValueError(f'Window size mismatch: Expected {int(fs * win)} samples, found {x.shape[1]} in {x_path}')
 
 
 

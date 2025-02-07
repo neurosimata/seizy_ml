@@ -107,7 +107,7 @@ class UserVerify:
         return filelist[index]
 
 
-    def get_bounds(self, file_id):
+    def get_bounds(self, file_id, verified):
         """
         Load data and calulate seizure bounds from predictions.
 
@@ -119,13 +119,16 @@ class UserVerify:
         -------
         data : 3d Numpy Array (1D = segments, 2D = time, 3D = channel)
         idx_bounds : 2D Numpy Array (rows = seizures, cols = start and end points of detected seizures)
+        verified: bool, True if file was verified
 
         """
         
-        print('-> File being analyzed: ', file_id)
-
         # Get predictions
-        pred_path = os.path.join(self.model_predictions_path, file_id)
+        print('-> File being analyzed: ', file_id)
+        if verified:
+            pred_path = os.path.join(self.verified_predictions_path, file_id)
+        else:
+            pred_path = os.path.join(self.model_predictions_path, file_id)
         bin_pred = np.loadtxt(pred_path, delimiter=',', skiprows=0)
         idx_bounds = get_szr_idx(bin_pred)
         
@@ -134,14 +137,10 @@ class UserVerify:
         f = tables.open_file(data_path, mode='r')
         data = f.root.data[:]
         f.close()
-        
-        # check whether to continue
         print('>>>>', idx_bounds.shape[0], 'seizures detected')
         
         return data, idx_bounds
-
-
-              
+            
     def save_emptyidx(self, data_len, file_id):
          """
          Save user predictions to csv file as binary

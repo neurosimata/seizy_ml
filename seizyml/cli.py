@@ -6,7 +6,6 @@ import os
 import yaml
 ### ----------------------------------------------------------------- ###
 
-
 class CustomOrderGroup(click.Group):
     """
     A custom Click group that maintains the order of commands added to it.
@@ -31,7 +30,6 @@ class CustomOrderGroup(click.Group):
 
     def list_commands(self, ctx):
         return self.commands_in_order
-
 
 @click.group(cls=CustomOrderGroup)
 @click.pass_context
@@ -178,6 +176,7 @@ def verify(ctx):
                     fg='yellow', bold=True)
         return
     
+    import numpy as np
     from seizyml.data_preparation.file_check import check_verified
     out = check_verified(folder=ctx.obj['parent_path'],
                      data_dir=ctx.obj['processed_dir'],
@@ -193,17 +192,27 @@ def verify(ctx):
                      ctx.obj['processed_dir'], 
                      ctx.obj['model_predictions_dir'],
                      ctx.obj['verified_predictions_dir'])
-    file_id = obj.select_file()                     # user file selection
-    data, idx_bounds = obj.get_bounds(file_id)      # get data and seizure index
     
+    # user file selection
+    file_id = obj.select_file()
+                  
+    # check if file was verified and get data, seizure index, and color array (if verified)
+    data, idx_bounds = obj.get_bounds(file_id, verified=False)
+    if os.path.exists(os.path.join(obj.verified_predictions_path, file_id)):
+        try:
+            color_array = np.loadtxt(os.path.join(obj.verified_predictions_path, 'color_' + file_id.replace('.csv', '.txt')), dtype=str)
+        except:
+            color_array = None
+    else:
+        color_array = None
+        
     # check for zero seizures otherwise proceed with gui creation
     if idx_bounds.shape[0] == 0:
         obj.save_emptyidx(data.shape[0], file_id)     
     else:
         from seizyml.user_gui.verify_gui import VerifyGui
-        VerifyGui(ctx.obj, file_id, data, idx_bounds)
-        
-        
+        VerifyGui(ctx.obj, file_id, data, idx_bounds, color_array)
+
 @main.command()
 @click.pass_context
 def extractproperties(ctx):
@@ -220,7 +229,7 @@ def extractproperties(ctx):
     
     # get properies and save
     from seizyml.helper.get_seizure_properties import get_seizure_prop
-    _, save_path = get_seizure_prop(ctx.obj['parent_path'], ctx.obj['verified_predictions_dir'], ctx.obj['win'])
+    _, save_path = get_seizure_prop(ctx.obj['parent_path'], ctx.obj['verified_predictions_dir'], ctx.obj['gui_win'])
     click.secho(f"\n -> Properies were saved in '{save_path}'.\n", fg='green', bold=True)
 
 @main.command()
@@ -299,7 +308,12 @@ def train(ctx, p):
         x_all = []
         y_all =[]
         
-        # TODO add file check before loading files
+        # run filecheck
+        from seizyml.data_preparation.file_check import train_file_check
+        train_file_check(train_path, h5_files, label_files, ctx.obj['win'], ctx.obj['fs'], ctx.obj['channels'])
+        print('File check passed.')
+        
+        # get features
         for x_path, y_path in tqdm(zip(h5_files, label_files), total=len(h5_files)):
             print('-> Cleaning and Computing Features:')
             
@@ -389,21 +403,6 @@ def cli_entry_point():
         
     # init cli
     main(obj={})
-    
 
 if __name__ == '__main__':
     cli_entry_point()
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
