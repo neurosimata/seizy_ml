@@ -91,10 +91,6 @@ class PreProcess:
             # save clean data
             save_data(os.path.join(self.save_path, filelist[i]), data)
 
-        print('Files in', self.load_path, 'directory have been cleaned and saved in:',
-              '-', self.save_path, '-')
-        print('---------------------------------------------------------------------------\n')
-
     def filter_clean(self, data):
         """
         Filters and removes outliers from the data.

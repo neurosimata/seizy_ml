@@ -4,6 +4,7 @@
 import click
 import os
 import yaml
+from seizyml.default_settings import settings_file_name, core_settings_path
 ### ----------------------------------------------------------------- ###
 
 class CustomOrderGroup(click.Group):
@@ -30,6 +31,60 @@ class CustomOrderGroup(click.Group):
 
     def list_commands(self, ctx):
         return self.commands_in_order
+    
+def get_core_settings():
+    """
+    Retrieve core application settings from core_settings_path or create the file if it doesn't exist.
+
+    Returns
+    -------
+    dict
+        A dictionary containing the core settings:
+        - 'data_path' (str): The application path.
+        - 'model_path' (str): The model directory path.
+        If the file was newly created, both values will be empty strings.
+    """
+
+
+    # Check if the file exists (Should be created from the app once during first execution)
+    if core_settings_path.is_file():
+        with open(core_settings_path, "r") as file:
+            core_settings = yaml.safe_load(file)
+    else:
+        # Create the file with a default 'path' field if it doesn't exist
+        with open(core_settings_path, "w") as file:
+            core_settings = {"data_path": "", "model_path":""}
+            yaml.dump(core_settings, file, default_flow_style=False)
+
+    return core_settings
+    
+def get_settings(path):
+    """
+    Load settings from a YAML file.
+
+    Parameters
+    ----------
+    path : str,Directory path where the settings.yaml file is located.
+
+    Returns
+    -------
+    dict, Dictionary containing the loaded or default settings.
+    """
+
+    # if file exists and keys match load current settings
+    from seizyml.default_settings import default_settings
+    file_path = os.path.join(path, settings_file_name)
+    if os.path.isfile(file_path):
+        with open(file_path, "r") as file:
+            settings = yaml.safe_load(file)
+        if default_settings.keys() == settings.keys():
+            return settings
+        else:
+            click.echo('-> Settings file found but keys do not match. Loading default settings.')
+    else:
+         click.echo('-> Settings file was not found. Loading default settings.')
+    
+    return default_settings
 
 @click.group(cls=CustomOrderGroup)
 @click.pass_context
@@ -51,26 +106,52 @@ def main(ctx):
     --------------------------------------------------------------
                                                                                                                                            
     """
-        
+
+    # load path file
+    core_settings = get_core_settings()
+
+    # get settings from path
+    settings = get_settings(core_settings['data_path'])
+    settings['model_path'] = core_settings['model_path']
+
     # get settings and pass to context
-    with open(settings_path, 'r') as file:
-        settings = yaml.safe_load(file)
-        ctx.obj = settings.copy()
-    
+    ctx.obj = settings.copy()
+
 @main.command()
-@click.argument('path',  type=click.Path())
 @click.pass_context
-def setpath(ctx, path):
+def setpath(ctx):
     """
     1: Set path
-    **Arguments:path**
     """
-    
+
+    # get parent path
+    parent_path = click.prompt(f'--> Please enter the Parent path: e.g. users/seizure_data_for_scoring\n')
+    if os.path.exists(parent_path):
+        with open(core_settings_path, 'w') as file:
+            yaml.dump({'data_path':parent_path, 'model_path':ctx.obj['model_path']}, file)
+        click.secho(f"\n -> Parent path was set to:'{parent_path}'.\n", fg='green', bold=True)
+    else:
+        click.secho(f"\n -> Directory not found'.\n", fg='yellow', bold=True)
+        return
+
+    # Check if the settings file exists
+    if os.path.isfile(os.path.join(parent_path, settings_file_name)):
+        overwrite = input(f'--> A settings file already exists. Do you want to overwrite it? (y/n): ').strip().lower()
+        if overwrite == 'n':
+            click.secho("\n -> Operation cancelled. Existing settings file was not modified.\n", fg='yellow', bold=True)
+            return
+        elif overwrite != 'y':
+            click.secho("\n -> Invalid input. Please enter 'y' for yes or 'n' for no.\n", fg='red', bold=True)
+            return
+
     # get parent path and set checks to False
-    ctx.obj.update({'parent_path': path})
-    ctx.obj.update({'file_check':False})
-    ctx.obj.update({'processed_check':False})
-    ctx.obj.update({'predicted_check':False})
+    settings_path = os.path.join(parent_path, settings_file_name)
+    ctx.obj.update({'settings_path': settings_path,
+                    'parent_path': parent_path,
+                    'file_check':False,
+                    'processed_check':False,
+                    'predicted_check':False,
+                    })
     
     # run check for processed and model predictions
     from seizyml.data_preparation.file_check import check_main
@@ -84,20 +165,29 @@ def setpath(ctx, path):
     if processed_check and model_predictions_check:
         ctx.obj.update({'predicted_check':True})
     
+    # create yaml file
     with open(settings_path, 'w') as file:
-        yaml.dump(ctx.obj, file) 
-    click.secho(f"\n -> Path was set to:'{path}'.\n", fg='green', bold=True)
-        
+        yaml.dump(ctx.obj, file)
+    click.secho(f"\n -> A settings file was created at:'{settings_path}'.\n", fg='green', bold=True)
+
 @main.command()
 @click.pass_context
 def filecheck(ctx):
     """2: Check files"""
-    
+
     # get child folders and create success list for each folder
     if not os.path.exists(ctx.obj['parent_path']):
         click.secho(f"\n -> Parent path '{ctx.obj['parent_path']}' was not found." +\
-                    " Please run -setpath-.\n",
-                    fg='yellow', bold=True)
+                    " Please run -setpath-.\n", fg='yellow', bold=True)
+        return
+    
+    # get channel_names
+    overwrite = click.prompt(f"Got ({', '.join(ctx.obj['channels'])}) as channel names. Do you want to proceed (y/n)?\n")
+    if overwrite == 'n':
+        click.secho("\n -> Operation cancelled. Files were not checked.\n", fg='yellow', bold=True)
+        return
+    elif overwrite != 'y':
+        click.secho("\n -> Invalid input. Please enter 'y' for yes or 'n' for no.\n", fg='red', bold=True)
         return
     
     ### code to check for files ###
@@ -112,9 +202,9 @@ def filecheck(ctx):
     else:
         # save error check to settings file
         ctx.obj.update({'file_check': True})
-        with open(settings_path, 'w') as file:
+        with open(ctx.obj['settings_path'], 'w') as file:
             yaml.dump(ctx.obj, file) 
-        click.secho(f"\n -> Error check for '{ctx.obj['parent_path']}' has been completed.\n",
+        click.secho(f"\n -> Error check for '{ctx.obj['parent_path']}' has been successfully completed.\n",
                     fg='green', bold=True)
 
 @main.command()
@@ -123,10 +213,18 @@ def preprocess(ctx):
     """3: Pre-process data (filter and remove large outliers) """
     
     if not ctx.obj['file_check']:
-        click.secho("\n -> File check has not pass. Please run -filecheck-.\n",
-                    fg='yellow', bold=True)
+        click.secho("\n -> File check has not pass. Please run -filecheck-.\n", fg='yellow', bold=True)
         return
     
+    if ctx.obj['processed_check'] == True:
+        overwrite = click.prompt(f"Files have already been processed. Do you want to proceed (y/n)?\n")
+        if overwrite == 'n':
+            click.secho("\n -> Operation cancelled. Files will not be processed.\n", fg='yellow', bold=True)
+            return
+        elif overwrite != 'y':
+            click.secho("\n -> Invalid input. Please enter 'y' for yes or 'n' for no.\n", fg='red', bold=True)
+            return
+        
     from seizyml.data_preparation.preprocess import PreProcess
     # get paths, preprocess and save data
     load_path = os.path.join(ctx.obj['parent_path'], ctx.obj['data_dir'])
@@ -134,8 +232,8 @@ def preprocess(ctx):
     process_obj = PreProcess(load_path=load_path, save_path=save_path, fs=ctx.obj['fs'])
     process_obj.filter_data()
     ctx.obj.update({'processed_check':True})
-
-    with open(settings_path, 'w') as file:
+    click.secho("\n -> File preprocessing completed successfully.\n", fg='green', bold=True)
+    with open(ctx.obj['settings_path'], 'w') as file:
         yaml.dump(ctx.obj, file) 
     return
  
@@ -144,25 +242,32 @@ def preprocess(ctx):
 def predict(ctx):
     """4: Generate model predictions"""
     
+    # checks if files have been preprocessed and a model was trained
     if ctx.obj['processed_check'] == False:
         click.secho("\n -> Data need to be preprocessed first. Please run -preprocess-.\n",
                     fg='yellow', bold=True)
         return
     
-    from seizyml.data_preparation.get_predictions import ModelPredict
+    # check if model was trained
+    if not os.path.isfile((ctx.obj['model_path'])):
+        click.secho(f"Model {ctx.obj['model_path']} could not be found. Please train a model.", fg='yellow', bold=True)
+        return
+    else:
+        click.secho(f"\n ->The following model will be used for predictions: {ctx.obj['model_path']}.\n", fg='green', bold=True)
     
+    from seizyml.data_preparation.get_predictions import ModelPredict
     # get paths and model predictions
-    model_path = os.path.join(ctx.obj['train_path'], ctx.obj['trained_model_dir'], ctx.obj['model_id'])
     load_path = os.path.join(ctx.obj['parent_path'], ctx.obj['processed_dir'])
     save_path = os.path.join(ctx.obj['parent_path'], ctx.obj['model_predictions_dir'])
-    model_obj = ModelPredict(model_path, load_path, save_path, channels=ctx.obj['channels'], win=ctx.obj['win'], fs=ctx.obj['fs'],
+    model_obj = ModelPredict(ctx.obj['model_path'], load_path, save_path, 
+                             channels=ctx.obj['channels'], win=ctx.obj['win'], fs=ctx.obj['fs'],
                              post_processing_method=ctx.obj['post_processing_method'], dilation=ctx.obj['dilation'],
                              erosion=ctx.obj['erosion'], event_threshold=ctx.obj['event_threshold'], 
                              boundary_threshold=ctx.obj['boundary_threshold'], rolling_window=ctx.obj['rolling_window'],)
     model_obj.predict()
     ctx.obj.update({'predicted_check':True})
     
-    with open(settings_path, 'w') as file:
+    with open(ctx.obj['settings_path'], 'w') as file:
         yaml.dump(ctx.obj, file)
     return
 
@@ -238,14 +343,14 @@ def featurecontribution(ctx):
     """7: Plot feature contibutions"""
     
     # check if model was trained
-    if not ctx.obj['model_id']:
-        click.secho("No model was found. Please train a model.",
-                    fg='yellow', bold=True)
+    if not os.path.isfile((ctx.obj['model_path'])):
+        click.secho(f"Model {ctx.obj['model_path']} could not be found. Please train a model.", fg='yellow', bold=True)
+        return
     
     from joblib import load
     import numpy as np
     import matplotlib.pyplot as plt
-    model_path = os.path.join(ctx.obj['train_path'], ctx.obj['trained_model_dir'], ctx.obj['model_id']+'.joblib')
+    model_path = ctx.obj['model_path']
     model = load(model_path)
     importances = np.abs(model.theta_[0] - model.theta_[1]) / (np.sqrt(model.var_[0]) + np.sqrt(model.var_[1]))
     importances = importances/np.sum(importances)
@@ -265,12 +370,25 @@ def featurecontribution(ctx):
 @click.pass_context
 def train(ctx, p):
     """* Train Models """
+
+    # check if model and model path exists
+    if ctx.obj['model_path'] and not os.path.isfile((ctx.obj['model_path'])):
+        click.secho(f"\n -> The the model file cannot be located at {ctx.obj['model_path']}\
+                    Consider training a new model or moving the file back to the original location.", fg='yellow', bold=True)
+
+    elif ctx.obj['model_path'] and os.path.isfile((ctx.obj['model_path'])):
+        overwrite = click.prompt(f"A model is already trained. Training  will overwrite the model used. Proceed (y/n)?\n")
+        if overwrite == 'n':
+            click.secho("\n -> Operation cancelled. Training aborted.\n", fg='yellow', bold=True)
+            return
+        elif overwrite != 'y':
+            click.secho("\n -> Invalid input. Please enter 'y' for yes or 'n' for no.\n", fg='red', bold=True)
+            return
     
-    # get child folders and create success list for each folder
-    if not os.path.exists(ctx.obj['parent_path']):
-        click.secho(f"\n -> Parent path '{ctx.obj['parent_path']}' was not found." +\
-                    " Please run -setpath-.\n",
-                    fg='yellow', bold=True)
+    # Get train path
+    train_path = input(f'--> Please enter the Train path: e.g. users/train_data\n')
+    if not os.path.exists(train_path):
+        click.secho(f"\n -> Train path '{train_path}' was not found.", fg='yellow', bold=True)
         return
     
     # imports
@@ -292,12 +410,8 @@ def train(ctx, p):
     
     process_type = list(process_type.intersection(process_type_options))
     if not process_type:
-        click.secho(f"\n -> Got'{p}' instead of {process_type_options}\n",
-                    fg='yellow', bold=True)
+        click.secho(f"\n -> Got'{p}' instead of {process_type_options}\n", fg='yellow', bold=True)
         return
-    
-    # get train path from settings
-    train_path = ctx.obj['parent_path']
     
     # pre-process data and compute features
     if 'compute_features' in process_type:
@@ -311,11 +425,10 @@ def train(ctx, p):
         # run filecheck
         from seizyml.data_preparation.file_check import train_file_check
         train_file_check(train_path, h5_files, label_files, ctx.obj['win'], ctx.obj['fs'], ctx.obj['channels'])
-        print('File check passed.')
         
         # get features
+        click.secho("\n-> File check passed. Cleaning and Computing Features (This may take a while):\n", fg='green', bold=True)
         for x_path, y_path in tqdm(zip(h5_files, label_files), total=len(h5_files)):
-            print('-> Cleaning and Computing Features:')
             
             # load f5 file and check if data are properly structured 
             x = load_data(os.path.join(train_path, x_path))
@@ -350,7 +463,7 @@ def train(ctx, p):
         
     # select features and train model
     if 'train_model' in process_type:
-        print('-> Training Model:')
+        click.secho("\n-> Training Models...\n", fg='green', bold=True)
         
         # select features
         if 'features' not in locals():
@@ -372,35 +485,17 @@ def train(ctx, p):
         model_id = train_df.loc[idx, 'ID']
 
         # pass model id and train path to settings
-        ctx.obj.update({'model_id': model_id})
-        ctx.obj.update({'train_path': ctx.obj['parent_path']})
+        ctx.obj['model_path'] = os.path.join(trained_model_path, model_id+'.joblib')
         print('Best model based on F1 score was selected:', model_id)
     
     # save settings
-    with open(settings_path, 'w') as file:
+    with open(ctx.obj['settings_path'], 'w') as file:
         yaml.dump(ctx.obj, file)
+    with open(core_settings_path, 'w') as file:
+        yaml.dump({'model_path':ctx.obj['model_path'], 'data_path': ctx.obj['parent_path']}, file)
 
 def cli_entry_point():
     """Entry point for the `seizyml` command when installed via pip."""
-    global settings_path
-    settings_path = os.path.join('seizyml', 'config.yaml')
-    temp_settings_path = os.path.join('seizyml', 'temp_config.yaml')
-
-    if not os.path.isfile(settings_path):
-        import shutil
-        shutil.copy(temp_settings_path, settings_path)
-
-    else:
-        # Check if keys match; if not, reset the settings file
-        with open(temp_settings_path, "r") as file:
-            temp_settings = yaml.safe_load(file)
-        with open(settings_path, "r") as file:
-            settings = yaml.safe_load(file)
-
-        if settings.keys() != temp_settings.keys():
-            import shutil
-            shutil.copy(temp_settings_path, settings_path)
-        
     # init cli
     main(obj={})
 

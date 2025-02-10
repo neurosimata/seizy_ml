@@ -52,7 +52,7 @@ class ModelPredict:
         self.fs = fs
         
         # Load the trained model
-        self.model = load(model_path +'.joblib')
+        self.model = load(model_path)
         self.selected_features = self.model.feature_labels
         print('Model loaded:', self.model)
         
