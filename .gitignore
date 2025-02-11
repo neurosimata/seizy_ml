@@ -160,3 +160,4 @@ cython_debug/
 #.idea/
 config.json
 config.yaml
+seizyml/core_settings.yaml
