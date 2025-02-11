@@ -1,18 +1,17 @@
 ## Configuration settings
+App settings can be edited from the `user-setting.yaml` file using any text editor. This file will be created in the parent directory after the user runs the `seizyml train-model`.
 
-All settings can be edited from the `config.yaml` file.
--> The `config.yaml` is created when the path is first set in **SeizyML** set from [temp_config.yaml](/temp_config.yaml).
 
 **1) Basic data parameters**
+
 - channels : List containing the names of LFP/EEG channels, e.g. ["hippocampus", "frontal cortex"].
-- win : Window size in seconds, **default and recommended is 5 seconds**.
+- win : Window size for processing and predictions in seconds, **default and recommended is 5 seconds**.
+- gui_win: Window size for verification, **default and recommended is 1 second**.
 - fs : Sampling rate of .h5 files, **default and recommended is 100 Hz**.
 
 **2) Paths**
 
-*Created by user:*
-- train_path: Path to training directory, e.g. "C:\\Users\\...\\train_directory".
-- parent_path : Path to parent directory, e.g. "C:\\Users\\...\\parent_directory".
+*Need to be created by user:*
 - data_dir : Child directory name where .h5 files are present, default is **"data"**.
   
 *Created by App:*
@@ -20,8 +19,10 @@ All settings can be edited from the `config.yaml` file.
 - model_predictions_dir : Child directory name with model predictions are present (.csv), default is **"model_predictions"**.
 - verified_predictions_dir : Child directory name where user verified predictions are present (.csv), default is **"verified_predictions"**.
 - trained_model_dir : Child directory from train_path where trained models are stored, default is **"models"**.
-
-<img src="configuration_paths.png" width="500">
+  
+<p align="center">
+        <img src="configuration_paths.png" width="500">
+</p>
 
 **3) Feature selection parameters**
 - features : List containing features to be used for feature selection.

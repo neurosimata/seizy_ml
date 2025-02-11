@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ### ------------------- Imports ------------------- ###
-from helper import features
+from seizyml.helper import features
 import numpy as np
 from joblib import Parallel, delayed
 import multiprocessing
