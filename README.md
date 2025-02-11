@@ -8,17 +8,16 @@
 
 ![Version](https://img.shields.io/badge/python_version-3.9-purple)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14825785.svg)](https://doi.org/10.5281/zenodo.14825785) 
-[![Generic badge](https://img.shields.io/badge/Contributions-Welcome-brightgreen.svg)](CONTRIBUTING.md)
+![Generic badge](https://img.shields.io/badge/Contributions-Welcome-brightgreen.svg)
 ![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue)
 
 
 ---
 ## 📚 Contents
-- [⚙️ Hardware Requirements](#hardware-requirements)
-- 💾 [Installation](#installation)
-- 🛠️ [App Configuration](#app-configuration)
-- 📈 [Model Training](#model-training)
-- 🚀 [How To Use](#how-to-use)
+- ⚙️ [Hardware Requirements](#⚙️-hardware-requirements)
+- 💾 [Installation](#💾-installation)
+- 📋 [How To Use](#📋-how-to-use)
+- 🛠️ [App Configuration](#🛠️-app-configuration)
 
 ### 📄 Additional Resources
 - [Configuration settings](/docs/configuration.md)
@@ -26,7 +25,7 @@
 - [Custom Model Integration](/docs/custom_model.md)
 ---
 
-### Hardware requirements
+### ⚙️ Hardware requirements
 
 - **SeizyML** is a lightweight application that utilizes Gaussian Naive Bayes (GNB) models to predict seizure events from EEG data.
 - Any modern CPU with sufficient RAM to load your EEG recordings should work effectively.
@@ -34,7 +33,7 @@
 - **No GPU is required** for SeizyML's operation.
 ---
 
-### Installation
+### 💾 Installation
 
 #### Conda (Recommended)
 1) Download and install [miniconda](https://repo.anaconda.com/miniconda/).
@@ -64,32 +63,50 @@
 
 If this works you should see the SeizyMl CLI interface.
 
-<img src="docs/cli.png" width="500">
+<p align="center">
+        <img src="docs/cli.png" width="500">
+</p>
 
 ---  
 
-### App Configuration
+### 📋 How To Use
 
-All settings are stored in the `config.yaml` file. 
-- This file will be created in the **SeizyML** folder from a template file (`temp_config.yaml`) after you use the setpath command for the first time. ⚠️ The `temp_config.yaml` file should not be edited by the user. 
+#### 🚀  Quick Start Guide
 
-To edit the `config.yaml` use any text editor such as notepad:
-- The only setting that requires editing before training a model and using the app is the `channels` field.
--         **channels** : List containing the names of LFP/EEG channels, e.g. ["hippocampus", "frontal cortex"]
-- All other settings can be left at default, given that the data were prepared in the recommended format (.h5 files with shape **[Nsegments, 500 (1 segment), channels]**).
-- For data conversion check the accompanying app [seizy_convert](https://github.com/neurosimata/seizy_convert) or the [h5_conversion script](/examples/to_h5.py) for more help.
-- An explanation of all other settings can be found [here](/docs/configuration.md).
+```
+# 1. Activate environment
+conda activate seizyml
+
+# 2. Train the model
+seizyml train-model
+
+# 3. Set data path
+seizyml set-datapath /path/to/data
+
+# 4. Preprocess EEG data
+seizyml preprocess
+
+# 5. Generate predictions
+seizyml predict
+
+# 6. Verify predictions via GUI
+seizyml verify
+
+# Repeat step 6 until all recordings are verified.
+
+# 7. Extract seizure properties
+seizyml extract-properties
+```
+
 ---
-        
-### Model Training
-- Before using **SeizyML** for seizure detection a model should be first trained on ground truth (hand-scored) data.
 
-1) **Launch App.**
+#### 📄 Detailed instructions
+
+1)  **Launch App.**
 
 For conda:
 ```
 # In anaconda prompt
-cd ./seizy_ml
 conda activate seizyml
 seizyml
 ```
@@ -100,107 +117,117 @@ For pip:
 seizyml
 ```
 
-2) **Set path for data processing.**
+2) **Train Model (Skip to step 3 if a model was trained).**
 ```
-seizyml setpath 'path'
+seizyml train-model
 ```
+- You will be prompted to enter the full path to the training directory.
 - This is the folder path where the training data in .h5 format along with the corresponding training labels in .csv format are stored.
 - The training data consist of each recording in .h5 format **[Nsegments, 1 segment, Nchannels].** Where a segment is 500 (win*fs).
+- For data conversion check the accompanying app [seizy_convert](https://github.com/neurosimata/seizy_convert) or the [h5_conversion script](/examples/to_h5.py) for more help.
 - The training labels consist of a corresponding .csv file containing the  ground truth labels (1 for seizure, 0 for non seizure) with length **[Nsegments].**
 - Training data and labels for each recording need to have a matching name.
 
-  <img src="docs/train_files.png" width="500">
-  
-- The `win`, `fs`, `channels` fields should be set in `config.yaml` to match the shape of the data. Defaults are win=5, fs=100.
--  The `config.yaml` is created when the path is first set in **SeizyML** set from [temp_config.yaml](seizyml/temp_config.yaml).
-- **This folder** should be kept in **one location** as the trained models will be stored here.
-- **If the folder is moved**, then the `training_path` field in `config.yaml` should be **updated** to reflect the new location.
+<p align="center">
+        <img src="docs/train_files.png" width="500">
+</p>
 
-3) **Model Training**
-```
-seizyml train
-```
-- This is a multi-step process:
-    - a) Data preprocessing (high pass filter and exterme outlier removal).
-    - b) Feature extraction.
-    - c) Find six best feature sets.
-    - d) Train a GNB model on these feature sets and select the one with highest F1 score.
-    - The *model_id* will be stored in the config.yaml file and will be used to load that model.
-      
-4) **Feature Contributions**
-Features contribution to the GNB model can be visualized using the following command.
-```
-seizyml featurecontribution
-```
----
-        
-### How To Use
+- After this a GUI will be launched to allow editing the settings.
+- The only field that requires editing (given default formatting) is the `channels` field.
+-         **channels** : List containing the names of LFP/EEG channels, e.g. ["hippocampus", "frontal cortex"]
 
-⚠️ **Note:** A model must be [trained](#model-training) ☝️ before using the app for seizure detection.
-
-1) **Launch App.**
-
-For conda:
+3) **Set DataPath.**
 ```
-# In anaconda prompt
-cd ./seizy_ml
-conda activate seizyml
-seizyml
+seizyml set-datapath <data_path>
 ```
 
-For pip:
-```
-# In terminal
-seizyml
-```
-
-2) **Set path for data processing.**
-```
-seizyml setpath 'path'
-```
-- This is the parent path where the child folder with h5 data resides and where all subsequent folders will be created. Check [configuration settings](/docs/configuration.md) for more information.
+- The first is the full path to the parent directory where the child folder with h5 data resides and where all subsequent folders will be created. Check [configuration settings](/docs/configuration.md) for more information.
 - The h5 data should be added in a child folder called `data`.
-
-3) **Run file check.**
 ```
-seizyml filecheck
+/parent_directory/
+└── data/
+    ├── file1.h5
+    └── file2.h5
 ```
-- ⚠️ This step checks that the h5 files have the correct dimensions. For help on how to convert files to h5 have a look at the [h5_conversion script](/examples/to_h5.py).
+- The data need to be in the same format as the data used to train the model.
 
 4) **Preprocess data.**
-
-- This is the step where the h5 data files will be filtered and large outliers will be removed.
 
 ```
 seizyml preprocess
 ```
+- This is the step where the h5 data files will be filtered and large outliers will be removed.
 
 5) **Generate model prections.**
 ```
 seizyml predict
 ```
 - Here selected features will be extracted and model predictions will be generated using the selected model (model id can be found in the configuration settings file).
+- For more informtaion check the [model pipeline](/docs/model_pipeline.md)
 
 6) **Verify seizures and adjust seizure boundaries.**
-- This will launch a prompt to allow for file selection for verification.
-- After file selection, a GUI will be launched for seizure verification and boundary adjustment.
-
 ```
 seizyml verify
 ```
+- This will launch a prompt to allow for file selection for verification.
+- After file selection, a GUI will be launched for seizure verification and boundary adjustment.
+- Repeat this command until all files are verified
 
-<img src="docs/verify_gui.png" width="500">
+<p align="center">
+        <img src="docs/verify_gui.png" width="500">
+</p>
 
 7) **Get seizure properties.** 
--This step will generate a csv file with seizure properties for each h5 file.
 ```
-seizyml extractproperties
+seizyml extract-properties
+```
+- After all files are verified run this command to get seizure properties
+- This step will generate a csv file with seizure properties for each h5 file.
+- Current properties extracted per file are:
+
+``` 
+'seizure_number'
+'avg_seizure_dur_sec'
+'total_time_seizing_sec'
+'coefficient_of_variation'
+'recording_dur_hrs
 ```
 
 ----
 
-### Contributions
+### Other important functions
+
+1) **Select Model.**
+```
+seizyml select-model <model_path> <user_settings_path>
+```
+- This function allows the user to select a model
+- Before using **SeizyML** for seizure detection a model should be first trained on ground truth (hand-scored) data.
+
+2) **Feature Contributions**
+```
+seizyml feature-contribution
+```
+- Features contribution to the GNB model can be visualized using the following command.
+
+---
+
+### 🛠️ App Configuration
+
+All settings are stored in the `user_settings.yaml` file. 
+- This file will be created in the training folder specified by the user when they run `seizyml train-model` command.
+- To edit the `user_settings.yaml` use any text editor such as notepad:
+- An explanation of all other settings can be found [here](/docs/configuration.md).
+---
+
+### 🤝 Contributions
 We welcome all project contributions including raising issues and pull requests!
+
+----
+
+### 📬 Support
+
+If you encounter issues, please submit them via the GitHub issue tracker.
 
 ----
 

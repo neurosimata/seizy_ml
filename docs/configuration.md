@@ -1,9 +1,9 @@
 ## Configuration settings
+App settings can be edited from the `user-setting.yaml` file using any text editor. This file will be created in the parent directory after the user runs the `seizyml train-model`.
 
-All settings can be edited from the `config.yaml` file.
--> The `config.yaml` is created when the path is first set in **SeizyML** set from [temp_config.yaml](../seizyml/temp_config.yaml).
 
 **1) Basic data parameters**
+
 - channels : List containing the names of LFP/EEG channels, e.g. ["hippocampus", "frontal cortex"].
 - win : Window size for processing and predictions in seconds, **default and recommended is 5 seconds**.
 - gui_win: Window size for verification, **default and recommended is 1 second**.
@@ -11,9 +11,7 @@ All settings can be edited from the `config.yaml` file.
 
 **2) Paths**
 
-*Created by user:*
-- train_path: Path to training directory, e.g. "C:\\Users\\...\\train_directory".
-- parent_path : Path to parent directory, e.g. "C:\\Users\\...\\parent_directory".
+*Need to be created by user:*
 - data_dir : Child directory name where .h5 files are present, default is **"data"**.
   
 *Created by App:*
