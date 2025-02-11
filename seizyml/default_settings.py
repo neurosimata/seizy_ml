@@ -33,7 +33,7 @@ def_user_settings = {
 
     # App (Data Processing) Settings
     'data_dir': 'data',
-    'file_check': False,
+    
     'gui_win': 1,
     'nleast_corr': 5,
     'post_processing_method': 'dual_threshold',
@@ -43,8 +43,9 @@ def_user_settings = {
     'dilation': 2,
     'erosion': 1,
     'model_predictions_dir': 'model_predictions',
-    'predicted_check': False,
+    'data_validated': False,
     'processed_check': False,
+    'predicted_check': False,
     'processed_dir': 'processed',
     'verified_predictions_dir': 'verified_predictions',
 }

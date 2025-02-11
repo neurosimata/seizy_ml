@@ -208,23 +208,3 @@ def train_file_check(train_path, h5_files, label_files, win, fs, channels):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

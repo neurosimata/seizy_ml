@@ -60,7 +60,7 @@ Homepage = "https://github.com/neurosimata/seizy_ml"
 Repository = "https://github.com/neurosimata/seizy_ml"
 
 [project.scripts]
-seizyml = "seizyml.cli:cli_entry_point"
+seizyml = "seizyml.cli:cli"
 
 [tool.setuptools.packages.find]
 where = ["."]
