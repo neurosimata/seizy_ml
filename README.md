@@ -14,10 +14,10 @@
 
 ---
 ## 📚 Contents
-- ⚙️ [Hardware Requirements](#-hardware-requirements)
+- ⚙️ [Hardware Requirements](%EF%B8%8F-hardware-requirements)
 - 💾 [Installation](#-installation)
 - 📋 [How To Use](#-how-to-use)
-- 🛠️ [App Configuration](#-app-configuration)
+- 🛠️ [App Configuration](%EF%B8%8F-app-configuration)
 
 ### 📄 Additional Resources
 - [Configuration settings](/docs/configuration.md)
