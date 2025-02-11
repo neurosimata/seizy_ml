@@ -16,14 +16,25 @@ njobs = int(multiprocessing.cpu_count()*.8)
 
 def get_feature_indices(selected_features, all_features):
     """
-    Returns the indices in the X matrix corresponding to the selected features.
-
-    Parameters:
-    - selected_features (list): A list of selected feature names.
-    - all_features (np.array): A numpy array of all feature names.
-
-    Returns:
-    - indices (np.array): An array of indices corresponding to the selected features in the X matrix.
+    Return the indices of selected features within the full set of features.
+    
+    Parameters
+    ----------
+    selected_features : list of str
+        A list of feature names to locate within the complete feature set.
+    all_features : numpy.ndarray
+        A 1D array containing all available feature names.
+        
+    Returns
+    -------
+    numpy.ndarray
+        An array of indices corresponding to the positions of each feature in 
+        `selected_features` found in `all_features`.
+        
+    Raises
+    ------
+    IndexError
+        If a feature in `selected_features` is not found in `all_features`.
     """
 
     # Loop through each selected feature to find its index in the all_features array
@@ -36,26 +47,36 @@ def get_feature_indices(selected_features, all_features):
 
 def grid_train(model_path, model_name, x, y, selected_features, feature_labels):
     """
-    Perform hyperparameter tuning for a specific machine learning model on various feature sets.
-    Save the best models and return a DataFrame summarizing the tuning results.
-
+    Perform hyperparameter tuning via grid search for a specified model on multiple feature sets,
+    saving the best model based on F1 score per feature set.
+    
     Parameters
     ----------
     model_path : str
         Directory path where the best model files will be saved.
     model_name : str
-        Name of the machine learning model as defined in the 'models' dictionary.
-    x : np.ndarray
-        2D array containing feature data with dimensions (time bins, features).
-    y : np.ndarray
-        1D array containing the classification target labels.
+        The key name of the machine learning model in the `models` dictionary.
+    x : numpy.ndarray
+        A 2D array with shape (n_samples, n_features) containing the feature data.
+    y : numpy.ndarray
+        A 1D array containing the classification target labels.
     selected_features : dict
-        Keys are feature-set names and values are list with names of selected features.
-
+        A dictionary where each key is a feature set name and each value is a list of feature names
+        (selected from `feature_labels`) to be used for that feature set.
+    feature_labels : numpy.ndarray
+        A 1D array of feature names corresponding to the columns in `x`.
+    
     Returns
     -------
-    df : pd.DataFrame
-        DataFrame containing unique identifiers for each model, the best hyperparameters, and performance metrics.
+    pandas.DataFrame
+        A DataFrame summarizing the grid search results with columns including:
+        ['ID', 'HYPERPARAMETERS', ...], where additional columns represent performance metrics
+        defined in the `metrics` dictionary.
+    
+    Notes
+    -----
+    - The best estimator for each feature set is saved as a joblib file using a unique ID.
+    - The best index is computed using a custom transformation on the ranking of the refit metric.
     """
 
     # define Kfold 
@@ -98,24 +119,31 @@ def grid_train(model_path, model_name, x, y, selected_features, feature_labels):
 
 def train_and_save_models(trained_model_path, x, y, selected_features, feature_labels):
     """
-    Train a selection of machine learning models on a given dataset, saving each trained model and summarizing 
-    the results in a DataFrame.
-
+    Train a collection of machine learning models using grid search over multiple feature sets,
+    save the trained models, and return a summary DataFrame of the results.
+    
     Parameters
     ----------
     trained_model_path : str
-        Directory path where the trained models will be saved.
-    x : np.ndarray or pd.DataFrame
-        2D array or DataFrame containing feature data.
-    y : np.ndarray or pd.Series
-        1D array or Series containing the classification target labels.
-    feature_space : pd.DataFrame
-        DataFrame specifying which features to use for each model. Each row represents a feature set.
-
+        Directory path where the trained model files will be saved. The directory will be created if it does not exist.
+    x : numpy.ndarray or pandas.DataFrame
+        A 2D array or DataFrame containing the feature data.
+    y : numpy.ndarray or pandas.Series
+        A 1D array or Series containing the target labels.
+    selected_features : dict
+        A dictionary mapping each feature set name to a list of selected feature names.
+    feature_labels : numpy.ndarray
+        A 1D array of feature names corresponding to the columns in `x`.
+    
     Returns
     -------
-    train_df : pd.DataFrame
-        DataFrame containing unique identifiers for each model, along with hyperparameters and performance metrics.
+    pandas.DataFrame
+        A concatenated DataFrame summarizing the grid search results for all models,
+        including unique model IDs, hyperparameters, and performance metrics, along with a 'model' column.
+    
+    Notes
+    -----
+    - This function iterates over all models defined in the `models` dictionary.
     """
     
     # create training dir
@@ -134,31 +162,38 @@ def train_and_save_models(trained_model_path, x, y, selected_features, feature_l
 
 def train_model(usr, train_path, process):
     """
-    Train a new seizure detection model using labeled data.
-
-    Parameters:
+    Train a new seizure detection model using labeled training data.
+    Depending on the `process` parameter, this function can compute features from raw data,
+    train the model using grid search, or perform both steps sequentially.
+    
+    Parameters
     ----------
     usr : dict
-        User settings containing model and data processing parameters.
+        Dictionary of user settings that includes model parameters, feature extraction options,
+        and data processing parameters.
     train_path : str
-        Path to the training data directory containing `.h5` files and corresponding `.csv` labels.
-    process : str
-        Specifies which process to run:
-        - 'compute_features': Computes features from training data.
-        - 'train_model': Trains the model using existing features.
-        - None: Runs both feature computation and model training.
-
-    Returns:
+        Path to the training data directory containing raw data files ('.h5') and corresponding label files ('.csv').
+    process : str or None
+        Specifies the process to execute:
+          - 'compute_features': Compute features from raw data.
+          - 'train_model': Train the model using precomputed features.
+          - Any other value or None: Execute both feature computation and model training.
+    
+    Returns
     -------
     str
-        Path to the saved trained model.
-
-    Raises:
+        The file path to the saved best trained model (joblib file).
+    
+    Raises
     ------
     ValueError
-        If the provided process type is invalid.
-    FileNotFoundError
-        If training data or label files are missing.
+        If the training data files are missing or if the file structure validation fails.
+    
+    Notes
+    -----
+    - When computing features, the raw data is preprocessed, features are computed and standardized,
+      and then saved to disk.
+    - Grid search is used for hyperparameter tuning, and the best model is selected based on the F1 score.
     """
 
     # imports

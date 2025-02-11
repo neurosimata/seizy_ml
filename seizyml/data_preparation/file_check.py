@@ -92,11 +92,11 @@ def check_processing_status(parent_path, data_dir, processed_dir, model_predicti
 
     Returns
     -------
-    dict, with is_processed
-    processed_check : bool
-        True if the processed directory exists and has the same files as the data directory, False otherwise.
-    model_predictions_check : bool
-        True if the model predictions directory exists and has the same files as the processed directory, False otherwise.
+    dict:
+        processed_check : bool
+            True if the processed directory exists and has the same files as the data directory, False otherwise.
+        model_predictions_check : bool
+            True if the model predictions directory exists and has the same files as the processed directory, False otherwise.
 
     """
     
