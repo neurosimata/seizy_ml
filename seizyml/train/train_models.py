@@ -217,6 +217,7 @@ def train_model(usr, train_path, process):
         # train models and find the one with best f1 score
         trained_model_path = os.path.join(train_path, usr['trained_model_dir'])
         train_df = train_and_save_models(trained_model_path, features, y, selected_features, feature_labels)
+        train_df.to_csv(os.path.join(trained_model_path, 'trained_models.csv'), index=False)
         best_model_id = train_df.loc[train_df['F1'].idxmax(), 'ID']
         model_path = os.path.join(trained_model_path, f'{best_model_id}.joblib')
 
