@@ -42,9 +42,9 @@ def cli(ctx):
 
 # -------------------- MODEL HANDLING -------------------- #
 @cli.command(name='train-model')
-@click.option('--process', type=click.Choice(['compute_features', 'train_model'], case_sensitive=False), help='Choose to compute features, train model, or both.')
+@click.option('--process', type=click.Choice(['compute_features', 'train_model'], case_sensitive=False), help='Choose to compute features, train model, or none for both.')
 @click.pass_context
-def train_model(ctx, process):
+def train_models(ctx, process):
     """
     1: Train a new seizure detection model.
     """
@@ -125,7 +125,7 @@ def set_data_path(ctx, path):
     usr = ctx.obj['user_settings']
 
     # Ensure a model is selected before setting the data path
-    if not core.get('model_path'):
+    if not os.path.exists(core.get('model_path')):
         click.secho("❌ A model must be selected before setting the data path. Use 'select-model' first.", fg='red')
         return
 
@@ -134,7 +134,7 @@ def set_data_path(ctx, path):
         click.secho(f"❌ The provided path '{path}' does not exist.", fg='red')
         return
 
-    from seizyml.data_preparation.file_check import validate_data_structure, check_processing_status
+    from seizyml.data_preparation.file_check import validate_data_structure
     # Data Validation
     click.secho(f"🔍 Validating data structure in '{path}'...", fg='cyan')
     data_validation_results = validate_data_structure(
@@ -156,7 +156,7 @@ def set_data_path(ctx, path):
     click.secho("📊 Checking data processing status...", fg='cyan')
     # run check for processed and model predictions
     from seizyml.data_preparation.file_check import check_processing_status
-    checks = check_processing_status(core['parent_path'], 
+    checks = check_processing_status(path, 
                                     usr['data_dir'], 
                                     usr['processed_dir'], 
                                     usr['model_predictions_dir'])
@@ -179,11 +179,11 @@ def preprocess(ctx):
 
     # Check if file validation has passed
     if not core.get('data_validated'):
-        click.secho("❌ File validation has not passed. Please run `set-data-path` to validate data.", fg='red')
+        click.secho("❌ File validation has not passed. Please run `set-datapath` to validate data.", fg='red')
         return
 
     # Check if data has already been processed
-    if core.get('processed_check', False):
+    if core.get('is_processed', False):
         overwrite = click.prompt("⚠️ Files have already been processed. Do you want to overwrite? (y/n)", default='n')
         if overwrite.lower() != 'y':
             click.secho("🚫 Operation cancelled. Existing processed data will remain unchanged.", fg='yellow')
