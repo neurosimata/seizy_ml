@@ -7,9 +7,9 @@ from tqdm import tqdm
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 from joblib import load
-from helper.io import load_data
-from helper.event_match import get_szr_idx, clean_predictions
-from helper.get_features import compute_selected_features
+from seizyml.helper.io import load_data
+from seizyml.helper.event_match import get_szr_idx, clean_predictions
+from seizyml.helper.get_features import compute_selected_features
 ### ------------------------------------------------------------------------###
 
 
@@ -52,7 +52,7 @@ class ModelPredict:
         self.fs = fs
         
         # Load the trained model
-        self.model = load(model_path +'.joblib')
+        self.model = load(model_path)
         self.selected_features = self.model.feature_labels
         print('Model loaded:', self.model)
         

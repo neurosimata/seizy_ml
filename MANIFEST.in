@@ -1,0 +1,17 @@
+# Include essential files
+include LICENSE
+include README.md
+include pyproject.toml
+
+# Include documentation and examples
+recursive-include docs *
+recursive-include examples *
+
+# Include YAML config files (if needed by the package)
+recursive-include seizyml *.yaml
+
+# Exclude unnecessary files
+global-exclude __pycache__ *.py[cod]
+prune dist
+prune build
+prune *.egg-info

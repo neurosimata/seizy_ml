@@ -1,7 +1,7 @@
 ####-------------------------------- Imports --------------------------- ######
 import pytest
 import numpy as np
-from helper.event_match import get_szr_idx, match_szrs_idx
+from seizyml.helper.event_match import get_szr_idx, match_szrs_idx
 ####------------------------------- Fixtures --------------------------- ######
 
 def create_bin_array(length, index):
