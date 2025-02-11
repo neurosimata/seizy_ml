@@ -171,7 +171,8 @@ seizyml verify
 ```
 - This will launch a prompt to allow for file selection for verification.
 - After file selection, a GUI will be launched for seizure verification and boundary adjustment.
-- Repeat this command until all files are verified
+- Repeat this command until all files are verified.
+- 📄 **Note**: if you choose to re-verify a file, the app will remember which seizures where accepted/rejected/not-verified but not the refined seizure boundaries.
 
 <p align="center">
         <img src="docs/verify_gui.png" width="500">
