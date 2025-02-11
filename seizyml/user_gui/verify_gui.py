@@ -13,11 +13,12 @@ class VerifyGui(object):
         Matplotlib GUI for user seizure verification.
     """
     
-    def __init__(self, settings, file_id, data, idx_bounds, color_array=None):
+    def __init__(self, parent_path, settings, file_id, data, idx_bounds, color_array=None):
         """  
 
         Parameters
         ----------
+        parent_path, str, path parent directory
         settings : dict, with configuration settings
         file_id : str, file name
         data : 3D Numpy array, (1D = seizure segments, 2D =  columns (samples: window*sampling rate), 3D = channels) 
@@ -38,7 +39,7 @@ class VerifyGui(object):
         self.bounds = 60                                                        # surrounding region in seconds
         self.bounds_bins = round(self.bounds/self.gui_win)                      # get surround time in bins
         self.ch_list = np.array(settings['channels'])                           # channel names
-        self.verpred_dir = os.path.join(settings['parent_path'], settings['verified_predictions_dir'])
+        self.verpred_dir = os.path.join(parent_path, settings['verified_predictions_dir'])
         self.accepted_color = 'palegreen'
         self.rejected_color = 'salmon'
         self.unverified_color = 'w'

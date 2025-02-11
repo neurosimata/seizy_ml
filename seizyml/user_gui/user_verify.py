@@ -17,7 +17,7 @@ class UserVerify:
     """
     
     # class constructor (data retrieval)
-    def __init__(self, parent_path, processed_dir, model_predictions,
+    def __init__(self, parent_path, processed_dir, model_predictions_dir,
                  verified_predictions_dir):
         """
         
@@ -25,7 +25,7 @@ class UserVerify:
         ----------
         parent_path : str
         processed_dir : str
-        model_predictions : str
+        model_predictions_dir : str
         verified_predictions_dir : str
 
         Returns
@@ -36,7 +36,7 @@ class UserVerify:
 
         # set full paths 
         self.processed_path = os.path.join(parent_path, processed_dir)
-        self.model_predictions_path = os.path.join(parent_path, model_predictions)
+        self.model_predictions_path = os.path.join(parent_path, model_predictions_dir)
         self.verified_predictions_path = os.path.join(parent_path, verified_predictions_dir)
 
         # make path if it doesn't exist
