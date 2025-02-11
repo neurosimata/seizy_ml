@@ -14,10 +14,10 @@
 
 ---
 ## 📚 Contents
-- ⚙️ [Hardware Requirements](%EF%B8%8F-hardware-requirements)
-- 💾 [Installation](#-installation)
-- 📋 [How To Use](#-how-to-use)
-- 🛠️ [App Configuration](%EF%B8%8F-app-configuration)
+- ⚙️ [Hardware Requirements](hardware-requirements)
+- 💾 [Installation](#installation)
+- 📋 [How To Use](#how-to-use)
+- 🛠️ [App Configuration](app-configuration)
 
 ### 📄 Additional Resources
 - [Configuration settings](/docs/configuration.md)
@@ -25,7 +25,7 @@
 - [Custom Model Integration](/docs/custom_model.md)
 ---
 
-### ⚙️ Hardware requirements
+### Hardware requirements
 
 - **SeizyML** is a lightweight application that utilizes Gaussian Naive Bayes (GNB) models to predict seizure events from EEG data.
 - Any modern CPU with sufficient RAM to load your EEG recordings should work effectively.
@@ -33,7 +33,7 @@
 - **No GPU is required** for SeizyML's operation.
 ---
 
-### 💾 Installation
+### Installation
 
 #### Conda (Recommended)
 1) Download and install [miniconda](https://repo.anaconda.com/miniconda/).
@@ -69,7 +69,7 @@ If this works you should see the SeizyMl CLI interface.
 
 ---  
 
-### 📋 How To Use
+### How To Use
 
 #### 🚀  Quick Start Guide
 
@@ -212,7 +212,7 @@ seizyml feature-contribution
 
 ---
 
-### 🛠️ App Configuration
+### App Configuration
 
 All settings are stored in the `user_settings.yaml` file. 
 - This file will be created in the training folder specified by the user when they run `seizyml train-model` command.
