@@ -3,12 +3,14 @@
 ### ----------------------------- IMPORTS --------------------------- ###
 import os
 import click
-import yaml
+from pathlib import Path
 from seizyml.default_settings import (
     get_core_settings,
     get_user_settings,
     CustomOrderGroup,
-    core_settings_path
+    core_settings_path,
+    user_settings_file,
+    save_settings
 )
 ### ----------------------------------------------------------------- ###
 
@@ -32,13 +34,11 @@ def cli(ctx):
     --------------------------------------------------------------
                                                                                                                                            
     """
-
-    core_settings = get_core_settings()
-    ctx.obj = core_settings
-
-    if core_settings.get("default_model"):
-        user_settings = get_user_settings(core_settings.get("default_model"))
-        ctx.obj.update(user_settings)
+    ctx.obj={}
+    core_settings = get_core_settings() 
+    user_settings = get_user_settings(Path(core_settings['user_settings_path']))
+    ctx.obj['core_settings'] = core_settings
+    ctx.obj['user_settings'] = user_settings
 
 # -------------------- MODEL HANDLING -------------------- #
 @cli.command(name='train-model')
@@ -48,229 +48,230 @@ def train_model(ctx, process):
     """
     1: Train a new seizure detection model.
     """
-    click.echo("🚀 Training model...")
 
-    # check if model and model path exists
-    if ctx.obj['model_path'] and not os.path.isfile((ctx.obj['model_path'])):
-        click.secho(f"\n -> The the model file cannot be located at {ctx.obj['model_path']}\
-                    Consider training a new model or moving the file back to the original location.", fg='yellow', bold=True)
+    # Unpack settings
+    usr, core = ctx.obj['user_settings'], ctx.obj['core_settings']
 
-    elif ctx.obj['model_path'] and os.path.isfile((ctx.obj['model_path'])):
-        overwrite = click.prompt(f"A model is already trained. Training  will overwrite the model used. Proceed (y/n)?\n")
+    # Check if model and model path exists
+    if core['model_path'] and os.path.isfile(core['model_path']):
+        overwrite = click.prompt(f"A model is already trained. Training will overwrite the model used. Proceed (y/n)?\n")
         if overwrite == 'n':
-            click.secho("\n -> Operation cancelled. Training aborted.\n", fg='yellow', bold=True)
+            click.secho("\n -> Operation cancelled. Training aborted.\n", fg='yellow')
             return
         elif overwrite != 'y':
-            click.secho("\n -> Invalid input. Please enter 'y' for yes or 'n' for no.\n", fg='red', bold=True)
+            click.secho("\n -> Invalid input. Please enter 'y' for yes or 'n' for no.\n", fg='red')
             return
+        
+    # Get training path
+    train_path = click.prompt("📂 Enter the training data path", type=str)
+    if not os.path.exists(train_path):
+        click.secho(f"❌ Train path '{train_path}' not found.", fg='red')
+        return
     
+    if 'compute_features' in process:
+        # Launch the GUI settings editor before training
+        from seizyml.user_gui.settings_editor import edit_settings_gui
+        click.echo("Opening settings editor GUI for updating settings...")
+        updated_settings = edit_settings_gui(usr)
+        usr = updated_settings
+        click.echo("Settings updated via GUI.")
+    
+    # Train model and save settings
     from seizyml.train.train_models import train_model
-    train_model(ctx, process)
+    model_path = train_model(usr, train_path, process)
+    core['model_path'] = model_path
+    core['user_settings_path'] = os.path.join(train_path, user_settings_file)
+    save_settings(core_settings_path, core)
+    save_settings(core['user_settings_path'], usr)
+    click.secho(f"✅ Created 'user settings' at {core['user_settings_path']}", fg='green')
 
 @cli.command(name='select-model')
 @click.argument('model_path')
+@click.argument('user_settings_path')
 @click.pass_context
-def select_model(ctx, model_path):
+def select_model(ctx, model_path, user_settings_path):
     """
-    2: Select an existing trained model.
+    2: Select model trained model and user settings.
     """
-    core_settings = get_core_settings()
-    core_settings['default_model'] = model_path
-    with open(core_settings_path, 'w') as file:
-        yaml.dump(core_settings, file)
-    click.secho(f"✅ Model selected: {model_path}", fg='green')
 
-# -------------------- DATASET CONFIGURATION -------------------- #
-@cli.command(name='set-data-path')
+    # Validate model file
+    try:
+        from joblib import load
+        load(model_path)
+        click.secho(f"✅ Model loaded successfully from '{model_path}'", fg='green')
+    except Exception as e:
+        click.secho(f"❌ Failed to load model: {e}", fg='red')
+        return
+
+    # Validate user settings file loading (The function checks internally)
+    get_user_settings(Path(user_settings_path))
+    click.secho(f"✅ Settings loaded successfully from '{user_settings_path}'", fg='green')
+
+    # Update core settings
+    core =  ctx.obj['core_settings']
+    core['model_path'] = model_path
+    core['user_settings_path'] = user_settings_path
+    save_settings(core_settings_path, core)
+
+@cli.command(name='set-datapath')
 @click.argument('path')
 @click.pass_context
 def set_data_path(ctx, path):
     """
     3: Set the path to the dataset for analysis.
     """
-    core_settings = get_core_settings()
-    core_settings['parent_path'] = path
-    with open(core_settings_path, 'w') as file:
-        yaml.dump(core_settings, file)
-    click.secho(f"✅ Data path set to: {path}", fg='green')
 
-    # Run file and validation checks
-    validation_passed = check_files_and_settings(ctx)
-    ctx.obj.update({'data_validated': validation_passed})
+    # Unpack settings
+    core = ctx.obj['core_settings']
+    usr = ctx.obj['user_settings']
 
-    if validation_passed:
-        click.secho("✅ Data validation passed.", fg='green')
-    else:
-        click.secho("❌ Data validation failed. Please fix the issues before proceeding.", fg='red')
+    # Ensure a model is selected before setting the data path
+    if not core.get('model_path'):
+        click.secho("❌ A model must be selected before setting the data path. Use 'select-model' first.", fg='red')
+        return
 
-@cli.command(name='check-files')
-@click.pass_context
-def check_files_and_settings(ctx):
-    """
-    4: Check file structure and validate dataset.
-    """
-    parent_path = ctx.obj['parent_path']
-    data_dir = ctx.obj['data_dir']
-    processed_dir = ctx.obj['processed_dir']
-    model_predictions_dir = ctx.obj['model_predictions_dir']
+    # Validate the provided path
+    if not os.path.exists(path):
+        click.secho(f"❌ The provided path '{path}' does not exist.", fg='red')
+        return
 
-    # File structure check
-    from seizyml.data_preparation.file_check import check_main
-    processed_check, model_predictions_check = check_main(
-        parent_path, data_dir, processed_dir, model_predictions_dir
+    from seizyml.data_preparation.file_check import validate_data_structure, check_processing_status
+    # Data Validation
+    click.secho(f"🔍 Validating data structure in '{path}'...", fg='cyan')
+    data_validation_results = validate_data_structure(
+        parent_path=path,
+        data_dir=usr['data_dir'],
+        model_channels=usr['channels'],
+        model_fs=usr['fs'],
+        model_win=usr['win']
     )
+    if data_validation_results['errors']:
+        for error in data_validation_results['errors']:
+            click.secho(f"❌ {error}", fg='red')
+        click.secho("❗ Data validation failed. Please fix the issues and try again.", fg='yellow')
+        return
+    else:
+        click.secho("✅ Data structure validation successful!", fg='green')
 
-    # Validation check
-    data_fs = ctx.obj.get('fs')
-    model_fs = ctx.obj.get('fs')
-    data_win = ctx.obj.get('win')
-    model_win = ctx.obj.get('win')
-    data_channels = ctx.obj.get('channels')
-    model_channels = ctx.obj.get('channels')
+    # Check processing status
+    click.secho("📊 Checking data processing status...", fg='cyan')
+    # run check for processed and model predictions
+    from seizyml.data_preparation.file_check import check_processing_status
+    checks = check_processing_status(core['parent_path'], 
+                                    usr['data_dir'], 
+                                    usr['processed_dir'], 
+                                    usr['model_predictions_dir'])
+    
+    # update core settings
+    core['parent_path'] = path
+    core['data_validated'] = True
+    core['is_processed'] = checks['is_processed']
+    core['is_predicted'] = checks['is_predicted']
+    save_settings(core_settings_path, core)
+    
+@cli.command(name='preprocess')
+@click.pass_context
+def preprocess(ctx):
+    """
+    4: Preprocess Data: Apply filtering and outlier removal.
+    """
+    # Unpack settings
+    usr, core = ctx.obj['user_settings'], ctx.obj['core_settings']
+    parent_path = core['parent_path']
 
-    validation_passed = (data_fs == model_fs) and (data_win == model_win) and (data_channels == model_channels)
+    # Check if file validation has passed
+    if not core.get('data_validated'):
+        click.secho("❌ File validation has not passed. Please run `set-data-path` to validate data.", fg='red')
+        return
 
-    # Update settings
-    ctx.obj.update({
-        'file_check': processed_check,
-        'processed_check': processed_check,
-        'predicted_check': model_predictions_check,
-        'data_validated': validation_passed
-    })
+    # Check if data has already been processed
+    if core.get('processed_check', False):
+        overwrite = click.prompt("⚠️ Files have already been processed. Do you want to overwrite? (y/n)", default='n')
+        if overwrite.lower() != 'y':
+            click.secho("🚫 Operation cancelled. Existing processed data will remain unchanged.", fg='yellow')
+            return
 
-    # Save settings
-    with open(ctx.obj['settings_path'], 'w') as file:
-        yaml.dump(ctx.obj, file)
+    # Preprocessing paths
+    load_path = os.path.join(parent_path, usr['data_dir'])
+    save_path = os.path.join(parent_path, usr['processed_dir'])
 
-    return validation_passed
+    # Preprocess Data
+    click.secho("⚙️ Preprocessing data: Filtering and removing large outliers...", fg='cyan')
+    from seizyml.data_preparation.preprocess import PreProcess
+    process_obj = PreProcess(load_path=load_path, save_path=save_path, fs=usr['fs'])
+    process_obj.filter_data()
+
+    # Update settings after successful processing
+    core['is_processed'] = True
+    save_settings(core_settings_path, core)
+    click.secho("✅ Data preprocessing completed successfully!", fg='green')
+
+@cli.command(name='predict')
+@click.pass_context
+def predict(ctx):
+    """
+    5: Generate Model Predictions 📊
+    This step applies the trained model to the preprocessed data to detect potential seizures.
+
+    Requirements:
+    - Data must be preprocessed (`is_processed` must be True).
+    - A trained model must be selected and available.
+    """
+    # Unpack settings
+    usr, core = ctx.obj['user_settings'], ctx.obj['core_settings']
+    parent_path = core['parent_path']
+
+    # Check if data has been preprocessed
+    if not core.get('is_processed', False):
+        click.secho("❌ Data needs to be preprocessed first. Please run `preprocess`.", fg='red')
+        return
+
+    # Check if a trained model is available
+    model_path = core.get('model_path')
+    if not model_path or not os.path.isfile(model_path):
+        click.secho(f"❌ No trained model found at {model_path}. Please train or select a model first.", fg='red')
+        return
+
+    click.secho(f"📈 Using the following model for predictions: {model_path}", fg='green')
+
+    # Prediction paths
+    load_path = os.path.join(parent_path, usr['processed_dir'])
+    save_path = os.path.join(parent_path, usr['model_predictions_dir'])
+
+    # Perform Predictions
+    click.secho("🚀 Generating model predictions...", fg='cyan')
+    from seizyml.data_preparation.get_predictions import ModelPredict
+    model_obj = ModelPredict(
+        model_path=model_path,
+        load_path=load_path,
+        save_path=save_path,
+        channels=usr['channels'],
+        win=usr['win'],
+        fs=usr['fs'],
+        post_processing_method=usr['post_processing_method'],
+        dilation=usr['dilation'],
+        erosion=usr['erosion'],
+        event_threshold=usr['event_threshold'],
+        boundary_threshold=usr['boundary_threshold'],
+        rolling_window=usr['rolling_window']
+    )
+    model_obj.predict()
+
+    # Update core settings after successful predictions
+    core['is_predicted'] = True
+    save_settings(core_settings_path, core)
+    click.secho("✅ Model predictions generated successfully!", fg='green')
+
 if __name__ == '__main__':
     cli(obj={})
 
-# @main.command()
-# @click.pass_context
-# def setpath(ctx):
-#     """
-#     1: Set path
-#     """
 
-#     # get parent path
-#     parent_path = click.prompt(f'--> Please enter the Parent path: e.g. users/seizure_data_for_scoring\n')
-#     if os.path.exists(parent_path):
-#         with open(core_settings_path, 'w') as file:
-#             yaml.dump({'data_path':parent_path, 'model_path':ctx.obj['model_path']}, file)
-#         click.secho(f"\n -> Parent path was set to:'{parent_path}'.\n", fg='green', bold=True)
-#     else:
-#         click.secho(f"\n -> Directory not found'.\n", fg='yellow', bold=True)
-#         return
-
-#     # Check if the settings file exists
-#     if os.path.isfile(os.path.join(parent_path, settings_file_name)):
-#         overwrite = input(f'--> A settings file already exists. Do you want to overwrite it? (y/n): ').strip().lower()
-#         if overwrite == 'n':
-#             click.secho("\n -> Operation cancelled. Existing settings file was not modified.\n", fg='yellow', bold=True)
-#             return
-#         elif overwrite != 'y':
-#             click.secho("\n -> Invalid input. Please enter 'y' for yes or 'n' for no.\n", fg='red', bold=True)
-#             return
-
-#     # get parent path and set checks to False
-#     settings_path = os.path.join(parent_path, settings_file_name)
-#     ctx.obj.update({'settings_path': settings_path,
-#                     'parent_path': parent_path,
-#                     'file_check':False,
-#                     'processed_check':False,
-#                     'predicted_check':False,
-#                     })
-    
-#     # run check for processed and model predictions
-#     from seizyml.data_preparation.file_check import check_main
-#     processed_check, model_predictions_check = check_main(ctx.obj['parent_path'], 
-#                                                           ctx.obj['data_dir'], 
-#                                                           ctx.obj['processed_dir'], 
-#                                                           ctx.obj['model_predictions_dir'])
-#     if processed_check:
-#             ctx.obj.update({'file_check':True})
-#             ctx.obj.update({'processed_check':True})
-#     if processed_check and model_predictions_check:
-#         ctx.obj.update({'predicted_check':True})
-    
-#     # create yaml file
-#     with open(settings_path, 'w') as file:
-#         yaml.dump(ctx.obj, file)
-#     click.secho(f"\n -> A settings file was created at:'{settings_path}'.\n", fg='green', bold=True)
-
-# @main.command()
-# @click.pass_context
-# def filecheck(ctx):
-#     """2: Check files"""
-
-#     # get child folders and create success list for each folder
-#     if not os.path.exists(ctx.obj['parent_path']):
-#         click.secho(f"\n -> Parent path '{ctx.obj['parent_path']}' was not found." +\
-#                     " Please run -setpath-.\n", fg='yellow', bold=True)
-#         return
-    
-#     # get channel_names
-#     overwrite = click.prompt(f"Got ({', '.join(ctx.obj['channels'])}) as channel names. Do you want to proceed (y/n)?\n")
-#     if overwrite == 'n':
-#         click.secho("\n -> Operation cancelled. Files were not checked.\n", fg='yellow', bold=True)
-#         return
-#     elif overwrite != 'y':
-#         click.secho("\n -> Invalid input. Please enter 'y' for yes or 'n' for no.\n", fg='red', bold=True)
-#         return
-    
-#     ### code to check for files ###
-#     from seizyml.data_preparation.file_check import check_h5_files
-#     error = check_h5_files(os.path.join(ctx.obj['parent_path'], ctx.obj['data_dir']),
-#                            win=ctx.obj['win'], fs=ctx.obj['fs'], 
-#                            channels=len(ctx.obj['channels']))
-    
-#     if error:
-#         click.secho(f"-> File check did not pass {error}\n", fg='yellow', bold=True)
-        
-#     else:
-#         # save error check to settings file
-#         ctx.obj.update({'file_check': True})
-#         with open(ctx.obj['settings_path'], 'w') as file:
-#             yaml.dump(ctx.obj, file) 
-#         click.secho(f"\n -> Error check for '{ctx.obj['parent_path']}' has been successfully completed.\n",
-#                     fg='green', bold=True)
-
-# @main.command()
-# @click.pass_context
-# def preprocess(ctx):
-#     """3: Pre-process data (filter and remove large outliers) """
-    
-#     if not ctx.obj['file_check']:
-#         click.secho("\n -> File check has not pass. Please run -filecheck-.\n", fg='yellow', bold=True)
-#         return
-    
-#     if ctx.obj['processed_check'] == True:
-#         overwrite = click.prompt(f"Files have already been processed. Do you want to proceed (y/n)?\n")
-#         if overwrite == 'n':
-#             click.secho("\n -> Operation cancelled. Files will not be processed.\n", fg='yellow', bold=True)
-#             return
-#         elif overwrite != 'y':
-#             click.secho("\n -> Invalid input. Please enter 'y' for yes or 'n' for no.\n", fg='red', bold=True)
-#             return
-        
-#     from seizyml.data_preparation.preprocess import PreProcess
-#     # get paths, preprocess and save data
-#     load_path = os.path.join(ctx.obj['parent_path'], ctx.obj['data_dir'])
-#     save_path = os.path.join(ctx.obj['parent_path'], ctx.obj['processed_dir'])
-#     process_obj = PreProcess(load_path=load_path, save_path=save_path, fs=ctx.obj['fs'])
-#     process_obj.filter_data()
-#     ctx.obj.update({'processed_check':True})
-#     click.secho("\n -> File preprocessing completed successfully.\n", fg='green', bold=True)
-#     with open(ctx.obj['settings_path'], 'w') as file:
-#         yaml.dump(ctx.obj, file) 
-#     return
  
 # @main.command()
 # @click.pass_context
 # def predict(ctx):
 #     """4: Generate model predictions"""
-    
+    # click.echo("🚀 Training model...")
 #     # checks if files have been preprocessed and a model was trained
 #     if ctx.obj['processed_check'] == False:
 #         click.secho("\n -> Data need to be preprocessed first. Please run -preprocess-.\n",

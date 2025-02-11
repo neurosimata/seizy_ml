@@ -13,7 +13,7 @@ core_settings_path = app_directory / core_settings_file
 # -------------------- DEFAULT SETTINGS -------------------- #
 def_core_settings = {
     'parent_path': '',
-    'train_path': '',
+    'user_settings_path': '',
     'model_path': '',
     # app internal checks
     'data_validated': False,
@@ -77,11 +77,10 @@ def get_core_settings():
         click.secho(f"❌ YAML error in {core_settings_path}: {e}", fg='red')
         return def_core_settings
 
-def get_user_settings(path):
+def get_user_settings(settings_path):
     """
     Load settings from a YAML file or initialize with defaults if the file doesn't exist.
     """
-    settings_path = Path(path) / user_settings_file
     try:
         if settings_path.is_file():
             with open(settings_path, "r") as file:
