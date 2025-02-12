@@ -83,7 +83,7 @@ seizyml train-model
 # 3. Set data path
 seizyml set-datapath /path/to/data
 
-# 4. Preprocess EEG data
+# 4. Preprocess EEG data (This is the most time consuming step)
 seizyml preprocess
 
 # 5. Generate predictions
@@ -157,6 +157,7 @@ seizyml set-datapath <data_path>
 seizyml preprocess
 ```
 - This is the step where the h5 data files will be filtered and large outliers will be removed.
+- This is the most time consuming step due to the filtering process.
 
 5) **Generate model prections.**
 ```
