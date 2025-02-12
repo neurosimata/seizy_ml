@@ -92,7 +92,7 @@ class SettingsEditor(ctk.CTk):
     def create_post_processing_tab(self):
         tab = self.tabview.tab("Post Processing")
         ctk.CTkLabel(tab, text="Post Processing Method:").grid(row=0, column=0, padx=10, pady=5, sticky="w")
-        self.pp_method_combobox = ctk.CTkComboBox(tab, values=["dual_threshold", "other_method"])
+        self.pp_method_combobox = ctk.CTkComboBox(tab, values=["dual_threshold", "dilation_erosion", "erosion_dilation"])
         self.pp_method_combobox.grid(row=0, column=1, padx=10, pady=5, sticky="w")
         self.pp_method_combobox.set(self.settings['post_processing_method'])
         
