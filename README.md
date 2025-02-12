@@ -71,7 +71,7 @@ If this works you should see the SeizyMl CLI interface.
 
 ### How To Use
 
-#### 🚀  Quick Start Guide
+#### 🚀  Quickstart Guide
 
 ```
 # 1. Activate environment
