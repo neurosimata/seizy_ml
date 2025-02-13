@@ -82,6 +82,7 @@ def train_models(ctx, process):
     core['user_settings_path'] = os.path.join(train_path, user_settings_file)
     save_settings(core_settings_path, core)
     save_settings(core['user_settings_path'], usr)
+    click.secho(f"✅ Model Selected: {model_path}", fg='green')
     click.secho(f"✅ Created 'user settings' at {core['user_settings_path']}", fg='green')
 
 @cli.command(name='select-model')
@@ -297,6 +298,8 @@ def verify(ctx):
     if os.path.exists(verified_path):
         try:
             color_array = np.loadtxt(os.path.join(verifier.verified_predictions_path, f'color_{file_id.replace(".csv", ".txt")}'), dtype=str)
+            if isinstance(color_array, np.ndarray) and color_array.ndim == 0:
+                color_array = [color_array.item()]
         except Exception as e:
             click.secho(f"⚠️ Warning: Failed to load color array for {file_id}: {e}", fg='yellow')
 
@@ -370,6 +373,16 @@ def feature_contribution(ctx):
     ax.set_ylabel('Features')
     plt.tight_layout()
     plt.show()
+
+@cli.command(name='show-default-model')
+@click.pass_context
+def show_model(ctx):
+    """
+    8: Show selected model.
+    """
+    # Unpack settings
+    core = ctx.obj['core_settings']
+    click.secho(f"Current model used {core['model_path']}", fg='green')
 
 if __name__ == '__main__':
     cli(obj={})
