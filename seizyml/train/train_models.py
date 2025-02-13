@@ -255,6 +255,7 @@ def train_model(usr, train_path, process):
         train_df.to_csv(os.path.join(trained_model_path, 'trained_models.csv'), index=False)
         best_model_id = train_df.loc[train_df['F1'].idxmax(), 'ID']
         model_path = os.path.join(trained_model_path, f'{best_model_id}.joblib')
+        pd.DataFrame().to_csv(os.path.join(trained_model_path, best_model_id+'.csv'))
 
         return model_path
 
