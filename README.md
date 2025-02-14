@@ -163,7 +163,7 @@ seizyml preprocess
 ```
 seizyml predict
 ```
-- Here selected features will be extracted and model predictions will be generated using the selected model (model id can be found in the configuration settings file).
+- Here selected features will be extracted and model predictions will be generated using the selected model.
 - For more informtaion check the [model pipeline](/docs/model_pipeline.md)
 
 6) **Verify seizures and adjust seizure boundaries.**
