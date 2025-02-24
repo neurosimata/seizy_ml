@@ -1,16 +1,20 @@
+import sys
 from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel,
-    QStackedWidget, QListWidget, QListWidgetItem, QLineEdit, QTextEdit
+    QStackedWidget, QListWidget, QListWidgetItem, QLineEdit, QTextEdit, QSplashScreen
 )
-from PySide6.QtGui import QCursor
-from PySide6.QtCore import Qt, Signal
-import sys
+from PySide6.QtGui import QCursor, QPixmap
+from PySide6.QtCore import Qt, Signal, QTimer
 
 class SeizyMLGUI(QWidget):
     def __init__(self, settings):
         super().__init__()
         self.setWindowTitle("SeizyML - Seizure Detection")
         self.setGeometry(100, 100, 800, 600)
+        qr=self.frameGeometry()           
+        cp=QApplication.primaryScreen().availableGeometry().center()
+        qr.moveCenter(cp)
+        self.move(qr.topLeft())
 
         # Load external style sheet
         with open("style.qss", "r") as f:
@@ -22,7 +26,7 @@ class SeizyMLGUI(QWidget):
         self.sidebar = QListWidget()
         self.sidebar.setFixedWidth(200)
         self.sidebar.setCursor(QCursor(Qt.PointingHandCursor))
-        self.sections = ["Home", "Train Model", "Preprocess Data"]
+        self.sections = ["Home", "Train Model", "Load Data", "Preprocess Data"]
         for section in self.sections:
             item = QListWidgetItem(section)
             self.sidebar.addItem(item)
@@ -33,8 +37,10 @@ class SeizyMLGUI(QWidget):
         self.pages.addWidget(self.home_page)
         self.train_page = TrainTab(settings)
         self.pages.addWidget(self.train_page)
-        self.preprocess = PreProcessTab(settings)
-        self.pages.addWidget(self.preprocess)
+        self.load_model_page = LoadTab(settings)
+        self.pages.addWidget(self.load_model_page)
+        self.preprocess_page = PreProcessTab(settings)
+        self.pages.addWidget(self.preprocess_page)
 
         self.sidebar.currentRowChanged.connect(self.pages.setCurrentIndex)
         main_layout.addWidget(self.sidebar)
@@ -44,21 +50,41 @@ class HomeTab(QWidget):
     def __init__(self):
         super().__init__()
         layout = QVBoxLayout()
-        self.title_label = QLabel("Welcome to SeizyML")
+
+        # Logo wrapper layout to center horizontally
+        logo_layout = QHBoxLayout()
+        self.logo_label = QLabel(self)
+        pixmap = QPixmap("images/seizyML_logo.png")
+        self.logo_label.setPixmap(pixmap)
+        self.logo_label.setScaledContents(True)
+        self.logo_label.setFixedSize(500, 250)
+        self.logo_label.setAlignment(Qt.AlignCenter)
+
+        # Add logo to horizontal layout for centering
+        logo_layout.addStretch()
+        logo_layout.addWidget(self.logo_label)
+        logo_layout.addStretch()
+
+        # Title
+        self.title_label = QLabel("Welcome")
         self.title_label.setObjectName("titleLabel")
         self.title_label.setAlignment(Qt.AlignCenter)
 
+        # Description
         self.desc_label = QLabel("Use the sidebar to navigate.")
         self.desc_label.setObjectName("descLabel")
         self.desc_label.setAlignment(Qt.AlignCenter)
 
+        # Button
         self.get_started_button = QPushButton("Get Started")
-        # Set hand cursor explicitly for buttons if desired
         self.get_started_button.setCursor(QCursor(Qt.PointingHandCursor))
 
+        # Add widgets to main layout
+        layout.addLayout(logo_layout)  # Ensures logo is centered
         layout.addWidget(self.title_label)
         layout.addWidget(self.desc_label)
         layout.addWidget(self.get_started_button, alignment=Qt.AlignCenter)
+
         self.setLayout(layout)
 
 class TrainTab(QWidget):
@@ -138,6 +164,54 @@ class TrainTab(QWidget):
         elif self.path_input.text():
             self.notification_field.append("❌ Invalid directory. Please select a valid data folder.")
 
+class LoadTab(QWidget):
+    path_set_signal = Signal(bool)
+
+    def __init__(self, settings):
+        super().__init__()
+        layout = QVBoxLayout()
+        self.title_label = QLabel("Load Model")
+        self.title_label.setObjectName("titleLabel")
+        self.title_label.setAlignment(Qt.AlignCenter)
+
+        # Model Selection
+        model_layout = QHBoxLayout()
+        self.model_path = QLineEdit()
+        self.model_path.setPlaceholderText("Load Model...")
+        self.model_path.setReadOnly(True)
+        self.browse_button = QPushButton("Browse")
+        self.browse_button.setCursor(QCursor(Qt.PointingHandCursor))
+        model_layout.addWidget(self.model_path)
+        model_layout.addWidget(self.browse_button)
+
+        # Data selection
+        path_layout = QHBoxLayout()
+        self.path_input = QLineEdit()
+        self.path_input.setPlaceholderText("Select data directory...")
+        self.path_input.setReadOnly(True)
+        self.browse_button = QPushButton("Browse")
+        self.browse_button.setCursor(QCursor(Qt.PointingHandCursor))
+        path_layout.addWidget(self.path_input)
+        path_layout.addWidget(self.browse_button)
+
+        # Load Button (Initially Disabled)
+        self.load_button = QPushButton("Load")
+        # self.load_button.setEnabled(False)
+        self.load_button.setCursor(QCursor(Qt.PointingHandCursor))
+
+        # Notification Field
+        self.notification_field = QTextEdit()
+        self.notification_field.setReadOnly(True)
+        self.notification_field.setPlaceholderText("Logs and progress updates will appear here...")
+        self.notification_field.setMaximumHeight(150)
+
+        layout.addWidget(self.title_label)
+        layout.addLayout(model_layout)
+        layout.addLayout(path_layout)
+        layout.addWidget(self.notification_field)
+        layout.addWidget(self.load_button, alignment=Qt.AlignCenter)
+        self.setLayout(layout)
+
 class PreProcessTab(QWidget):
     path_set_signal = Signal(bool)
 
@@ -181,7 +255,13 @@ if __name__ == "__main__":
         "sampling_rate": 256,
         "window_size": 2
     }
+
+    # Create and show splash screen
     app = QApplication(sys.argv)
+    splash_pix = QPixmap("images/seizyML_logo.png").scaled(400, 200, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+    splash = QSplashScreen(splash_pix, Qt.WindowStaysOnTopHint)
+    splash.show()
     window = SeizyMLGUI(settings)
-    window.show()
+    QTimer.singleShot(500, splash.close)
+    QTimer.singleShot(500, window.show)
     sys.exit(app.exec())
