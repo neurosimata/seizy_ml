@@ -3,7 +3,7 @@
 </p>
 
 - **SeizyML** uses interpretable machine learning models to detect 🕵️‍♂️ seizures from EEG recordings coupled with manual verification in user-friendly GUI.
-- 📖 To reference **SeizyML**, or view the manuscript, please refer to the following [publication](https://www.researchsquare.com/article/rs-4361048/v1) (To be updated soon). 
+- 📖 To reference **SeizyML**, or view the manuscript, please refer to the following [publication](https://link.springer.com/article/10.1007/s12021-025-09719-4). 
 - You can access the data and code used to reproduce the experiments and figures from the accompanying paper on [Zenodo](https://doi.org/10.5281/zenodo.14825785).
 
 ![Version](https://img.shields.io/badge/python_version-3.9-purple)
