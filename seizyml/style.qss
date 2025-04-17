@@ -21,13 +21,13 @@ QListWidget::item:hover {
     background-color: #3a3a3a;
 }
 QListWidget::item:selected {
-    background-color: #07a845;
+    background-color:rgb(11, 112, 50);
     color: white;
 }
 
 /* Title labels (with objectName 'titleLabel') */
 QLabel#titleLabel {
-    color: #07a845;
+    color: rgb(11, 112, 50);
     padding: 10px;
     font-size: 16pt;
     font-weight: bold;
@@ -41,7 +41,7 @@ QLabel#descLabel {
 
 /* QPushButton styling */
 QPushButton {
-    background-color: #07a845;
+    background-color:rgb(11, 112, 50);
     color: white;
     border-radius: 10px;
     padding: 10px;
@@ -58,7 +58,7 @@ QPushButton:disabled {
 /* QTextEdit styling (for notification fields) */
 QTextEdit {
     background-color: #1e1e1e;
-    color: #589658;
+    color: rgb(11, 112, 50);
     border: 2px solid #07a845;
     border-radius: 5px;
     padding: 5px;

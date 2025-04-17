@@ -258,7 +258,7 @@ if __name__ == "__main__":
 
     # Create and show splash screen
     app = QApplication(sys.argv)
-    splash_pix = QPixmap("images/seizyML_logo.png").scaled(400, 200, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+    splash_pix = QPixmap("images/splash_logo.png").scaled(400, 200, Qt.KeepAspectRatio, Qt.SmoothTransformation)
     splash = QSplashScreen(splash_pix, Qt.WindowStaysOnTopHint)
     splash.show()
     window = SeizyMLGUI(settings)
