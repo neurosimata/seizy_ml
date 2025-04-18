@@ -34,19 +34,24 @@
 ---
 
 ### Installation
+Follow one of the two methods (Conda or Pip) to install **SeizyML**:
 
 #### Conda (Recommended)
-1) Download and install [miniconda](https://repo.anaconda.com/miniconda/).
+1) Download and install [miniconda](https://repo.anaconda.com/miniconda/), choose any version making sure it's appropriate for your platform (Windows/MacOS/Linux).
 2) Clone or Download [SeizyML](https://github.com/neurosimata/seizy_ml/) on your machine.
-3) Start Anaconda's prompt, navigate to the downloaded */seizy_ml* to create the conda environment:
+3) Start Anaconda's prompta and navigate to the downloaded */seizy_ml*
+
+        cd path-to-seizyml-folder (Replace with your actual path, e.g. C:\Documents\seizy_ml)
+   
+4) Create the conda environment:
 
         conda env create -f environment.yml
 
-4) Activate environment
+5) Activate environment
 
         conda activate seizyml
 
-5) Launch App
+6) Launch App
 
         seizyml
 
