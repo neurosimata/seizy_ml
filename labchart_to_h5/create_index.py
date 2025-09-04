@@ -206,7 +206,9 @@ if __name__ == "__main__":
     parent_path = input("Enter parent path where labchart_data resides: ").strip()
 
     # Canonical channel labels to KEEP (substring match, case-insensitive)
-    expected_channels = ["vHPC", "EMG", "FC"]  # e.g., ["BIO", "vHPC", "EMG", "FC"]
+    # expected_channels = ["vHPC", "FC"]  # e.g., ["BIO", "vHPC", "EMG", "FC"]
+    channel_input = input("Enter expetected channels: ").strip()
+    expected_channels = [s.strip() for s in channel_input.split(",") if s.strip()] if channel_input else []
 
     # Optional: keywords to DROP entirely (e.g., 'bio', 'drop', 'empty')
     drop_input = input("Enter comma-separated channel keywords to drop (optional): ").strip()
