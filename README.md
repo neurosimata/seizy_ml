@@ -164,7 +164,7 @@ seizyml preprocess
 - This is the step where the h5 data files will be filtered and large outliers will be removed.
 - This is the most time consuming step due to the filtering process.
 
-5) **Generate model prections.**
+5) **Generate model predictions.**
 ```
 seizyml predict
 ```
