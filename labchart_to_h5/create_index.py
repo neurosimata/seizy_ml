@@ -2,6 +2,8 @@
 """
 Summarize LabChart (.adicht) files using the `adi` reader.
 
+# Files NEED to be named with labchart macros!!!
+
 Per file, per channel, per block, records:
 - file_name
 - sampling_rate (Hz)
@@ -123,6 +125,15 @@ def enrich_df(df: pd.DataFrame) -> pd.DataFrame:
     df["recording_id"] = (
         base_names + "_an" + df["animal_id"] + "_block" + (1 + df["block_index"]).astype(str)
     )
+    
+    # split conditions into columns (ignore anima_id and brain_region)
+    try:
+        metadata = df["channel_name"].str.split('-').str[2].str.split('_', expand=True).iloc[:,:-1]
+        metadata.columns = [f"condition_{i+1}" for i in range(metadata.shape[1])]
+        df = pd.concat((df, metadata), axis=1)
+    except:
+        print('Metadata could not be extracted. Make sure that all channels were named with Macro')
+    
     return df
 
 
