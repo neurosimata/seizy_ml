@@ -50,7 +50,7 @@ def_user_settings = {
     'erosion': 1,
 
     # app directory names
-    'data_dir': 'data',
+    'data_dir': 'h5_data',
     'processed_dir': 'processed',
     'model_predictions_dir': 'model_predictions',
     'verified_predictions_dir': 'verified_predictions',

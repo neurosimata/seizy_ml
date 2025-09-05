@@ -12,7 +12,7 @@ App settings can be edited from the `user-setting.yaml` file using any text edit
 **2) Paths**
 
 *Need to be created by user:*
-- data_dir : Child directory name where .h5 files are present, default is **"data"**.
+- data_dir : Child directory name where .h5 files are present, default is **"h5_data"**.
   
 *Created by App:*
 - processed_dir : Child directory name with h5 preprocessed data, default is **"processed"**.
