@@ -1,3 +1,5 @@
+<h1 style="text-align: center;">---- MAGUIRE LAB BRANCH (WITH LABCHART UTILITY) ----</h1>
+
 <p align="center">
         <img src="docs/seizyML.png" width="600">
 </p>
@@ -164,7 +166,7 @@ seizyml preprocess
 - This is the step where the h5 data files will be filtered and large outliers will be removed.
 - This is the most time consuming step due to the filtering process.
 
-5) **Generate model prections.**
+5) **Generate model predictions.**
 ```
 seizyml predict
 ```
