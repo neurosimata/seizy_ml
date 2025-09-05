@@ -248,7 +248,7 @@ if __name__ == "__main__":
         debug_csv = os.path.join(parent_path, "file_index_debug.csv")
         df.to_csv(debug_csv, index=False)
         print(f"--> Wrote debug summary (with 'no_match') to: {debug_csv}")
-        raise
+        raise(Exception(str(e)))
 
     # Save final results
     output_csv = os.path.join(parent_path, "file_index.csv")
