@@ -13,6 +13,46 @@
 ![Generic badge](https://img.shields.io/badge/Contributions-Welcome-brightgreen.svg)
 ![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue)
 
+---
+
+# ⚡ TL;DR
+
+```bash
+# 0. Activate environment
+conda activate seizyml
+
+# 1. Prepare your folder
+parent_path/
+└── labchart_data/*.adicht
+
+# 2. Create index (metadata CSV)
+cd labchart_to_h5
+python create_index.py     # → file_index.csv
+
+# 3. Convert LabChart to HDF5
+python convert_adi_to_h5.py  # → h5_data/*.h5
+
+# 4. Select pretrained model (or train new one)
+seizyml select-model
+# (or: seizyml train-model)
+
+# 5. Set datapath (parent folder with h5_data/)
+seizyml set-datapath /path/to/parent
+
+# 6. Preprocess EEG data
+seizyml preprocess
+
+# 7. Generate predictions
+seizyml predict
+
+# 8. Verify predictions via GUI
+seizyml verify   # repeat until all recordings are done
+
+# 9. Extract seizure properties to CSV
+seizyml extract-properties
+```
+
+✅ Result: **`.adicht` → `.h5` → model predictions → manual verification → seizure properties**.  
 
 ---
 ## 📚 Contents
@@ -104,6 +144,71 @@ seizyml verify
 # 7. Extract seizure properties
 seizyml extract-properties
 ```
+---
+
+### 🧪 LabChart Utilities
+
+This branch includes helper scripts to standardize LabChart recordings (`.adicht`) into HDF5 format that SeizyML can process.
+
+#### 1. Input Data Structure
+
+```
+parent_path/
+└── labchart_data/
+    ├── recording1.adicht
+    ├── recording2.adicht
+    └── ...
+```
+
+#### 2. Create Index
+
+Run the indexer to generate metadata CSV with file names and timestamps:
+
+```bash
+python create_index.py
+```
+
+* Output: `file_index.csv` (or `file_index_debug.csv` if inconsistencies are found).
+* Contains mapping between recording IDs, channels, and acquisition times.
+
+#### 3. Convert to HDF5
+
+Use the converter to transform raw `.adicht` files into analysis-ready `.h5` format:
+
+```bash
+python convert_adi_to_h5.py
+```
+
+* Output: `h5_data/*.h5`
+* Each `.h5` file is segmented into 5‑second non-overlapping windows at 100 Hz.
+* A `conversion_properties.json` file is also generated to record sampling rates, downsampling parameters, and segmentation rules.
+
+#### 4. Data Contract
+
+* **Input**: LabChart `.adicht` binary recordings, multi-channel.
+* **Output**: `.h5` files of shape `[Nsegments, 1, Nchannels]` + metadata CSV.
+* **Assumptions**: Correctly paired channels and timestamps, consistent sampling frequency.
+* **Downstream Use**: These `.h5` files can be directly used in SeizyML training, preprocessing, and prediction pipelines.
+
+#### Example Workflow
+
+```bash
+# 1. Create index file
+python create_index.py
+
+# 2. Convert to h5 format
+python convert_adi_to_h5.py
+
+# 3. Launch SeizyML pipeline
+seizyml set-datapath /parent_path
+seizyml preprocess
+seizyml predict
+seizyml verify
+seizyml extract-properties
+```
+
+✅ With these utilities, the full pipeline becomes: **`.adicht` → `.h5` → SeizyML analysis**.
+
 
 ---
 
@@ -241,3 +346,4 @@ If you encounter issues, please submit them via the GitHub issue tracker.
 ----
 
 -> Back to [Top](#-contents).
+
